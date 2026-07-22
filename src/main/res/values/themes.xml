@@ -6,5 +6,10 @@
     <item name="android:statusBarColor">@android:color/transparent</item>
     <item name="android:windowLightStatusBar">false</item>
     <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    <item name="android:colorPrimary">@color/star</item>
+    <!-- DESIGN.md §9's colorSurface and colorError are AndroidX Material attributes
+         with no framework equivalent, so they are intentionally NOT set here in this
+         Gradle-free, framework-Material-themed (android:Theme.Material) build. Widgets
+         that need those colors reference @color/surface / @color/fret_red directly. -->
   </style>
 </resources>
