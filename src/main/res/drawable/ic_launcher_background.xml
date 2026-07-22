@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  App icon background (DESIGN.md 2.4 / 3.3): the stage. A dark vertical
+  gradient receding into stage_black, a soft cyan bloom near the top, a
+  barely-there converging note-highway perspective, a faint horizontal
+  cyan strike line, and a corner vignette. 108x108 adaptive-icon canvas.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+  <!-- 1. Base vertical gradient: surface -> mid -> stage_black -->
+  <path android:pathData="M0,0L108,0L108,108L0,108Z">
+    <aapt:attr name="android:fillColor">
+      <gradient
+          android:type="linear"
+          android:startX="54" android:startY="0"
+          android:endX="54" android:endY="108">
+        <item android:offset="0" android:color="#FF14161F" />
+        <item android:offset="0.55" android:color="#FF0C0D14" />
+        <item android:offset="1" android:color="#FF0A0B12" />
+      </gradient>
+    </aapt:attr>
+  </path>
+
+  <!-- 2. Converging note-highway perspective lines — barely-there -->
+  <path
+      android:pathData="M15,102 L54,20"
+      android:strokeColor="#0C6E90B4"
+      android:strokeWidth="1"
+      android:strokeLineCap="round"
+      android:fillColor="#00000000" />
+  <path
+      android:pathData="M93,102 L54,20"
+      android:strokeColor="#0C6E90B4"
+      android:strokeWidth="1"
+      android:strokeLineCap="round"
+      android:fillColor="#00000000" />
+
+  <!-- 3. Soft stage bloom, top-center -->
+  <path android:pathData="M0,0L108,0L108,108L0,108Z">
+    <aapt:attr name="android:fillColor">
+      <gradient
+          android:type="radial"
+          android:centerX="54" android:centerY="4"
+          android:gradientRadius="60">
+        <item android:offset="0" android:color="#301C2A44" />
+        <item android:offset="1" android:color="#001C2A44" />
+      </gradient>
+    </aapt:attr>
+  </path>
+
+  <!-- 4. Faint horizontal cyan strike line -->
+  <path android:pathData="M10,68.4L98,68.4L98,70.2L10,70.2Z">
+    <aapt:attr name="android:fillColor">
+      <gradient
+          android:type="linear"
+          android:startX="10" android:startY="69.3"
+          android:endX="98" android:endY="69.3">
+        <item android:offset="0" android:color="#0035E6E1" />
+        <item android:offset="0.5" android:color="#6035E6E1" />
+        <item android:offset="1" android:color="#0035E6E1" />
+      </gradient>
+    </aapt:attr>
+  </path>
+
+  <!-- 5. Corner vignette -->
+  <path android:pathData="M0,0L108,0L108,108L0,108Z">
+    <aapt:attr name="android:fillColor">
+      <gradient
+          android:type="radial"
+          android:centerX="54" android:centerY="54"
+          android:gradientRadius="86">
+        <item android:offset="0" android:color="#00000000" />
+        <item android:offset="0.62" android:color="#00000000" />
+        <item android:offset="1" android:color="#4D000000" />
+      </gradient>
+    </aapt:attr>
+  </path>
+
+</vector>

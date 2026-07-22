@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Monochrome/themed icon layer (DESIGN.md 2.4): the W-dive as a single
+  flat white silhouette. Referenced via <monochrome> in the adaptive
+  icon; the launcher tints it to the user's theme color.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+  <path
+      android:pathData="M25,35 C27.54,41.65 34.42,71.25 39.5,73 C44.58,74.75 48.92,45 54,45 C59.08,45 63.42,74.75 68.5,73 C73.58,71.25 80.46,41.65 83,35"
+      android:strokeColor="#FFFFFFFF"
+      android:strokeWidth="9"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"
+      android:fillColor="#00000000" />
+
+</vector>
