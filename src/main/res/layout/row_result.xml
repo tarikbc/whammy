@@ -111,9 +111,10 @@
     <!-- Note button: 48dp FrameLayout container. ResultsAdapter swaps its
          background (note_ring / note_done / note_error) and the icon per
          DownloadState — neutral `star` idle/downloading, `fret_green`
-         done, `fret_red` error; no per-row fret tinting. Task 9:
-         ProgressRingView is added as a further child of this same
-         FrameLayout to render DOWNLOADING — no restructuring needed. -->
+         done, `fret_red` error; no per-row fret tinting. Task 9's
+         ProgressRingView (progress_ring, below) is a further child of
+         this same FrameLayout; ResultsAdapter shows it instead of
+         note_icon only in DOWNLOADING. -->
     <FrameLayout
         android:id="@+id/note_button"
         android:layout_width="@dimen/note_button_size"
@@ -129,6 +130,19 @@
           android:layout_height="22dp"
           android:layout_gravity="center"
           android:src="@drawable/ic_download" />
+
+      <!-- Task 9 (DESIGN.md §7.4/§9): the cyan->blue sweep-arc progress
+           ring. Sized to fill the note button (48dp = note_button_size).
+           GONE by default; ResultsAdapter shows this and hides
+           note_icon only in DownloadState.DOWNLOADING, calling
+           setPercent() on every bind so a recycled row never shows a
+           stale arc. -->
+      <com.tarikbc.whammy.ProgressRingView
+          android:id="@+id/progress_ring"
+          android:layout_width="@dimen/note_button_size"
+          android:layout_height="@dimen/note_button_size"
+          android:layout_gravity="center"
+          android:visibility="gone" />
     </FrameLayout>
   </LinearLayout>
 </FrameLayout>

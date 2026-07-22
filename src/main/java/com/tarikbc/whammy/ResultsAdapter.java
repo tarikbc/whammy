@@ -31,10 +31,11 @@ import java.util.Map;
  * of a per-row fret lane-light — the fret rainbow is icon-only now
  * (DESIGN.md §1.1). The note button is a single neutral accent (`star`
  * idle/downloading, `fret_green` done, `fret_red` error) with no
- * per-row tinting. The DOWNLOADING row still renders the neutral
- * placeholder ring — Task 9's ProgressRingView owns the cyan->blue
- * sweep arc and is added as a further child of the note_button
- * FrameLayout without any restructuring here.
+ * per-row tinting. Task 9's {@link ProgressRingView} (progress_ring,
+ * a further child of the note_button FrameLayout in row_result.xml)
+ * owns the cyan->blue sweep arc: it's shown/percent-set in
+ * DOWNLOADING and hidden (with note_icon shown instead) in every
+ * other state, so a recycled row never carries a stale arc.
  */
 public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolder> {
 
@@ -132,6 +133,7 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
     switch (state) {
       case DONE:
         showMeta(h, c);
+        hideProgressRing(h);
         h.noteButton.setBackgroundResource(R.drawable.note_done);
         h.noteButton.setBackgroundTintList(null);
         h.noteIcon.setImageResource(R.drawable.ic_check);
@@ -140,6 +142,7 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
 
       case ERROR:
         showError(h);
+        hideProgressRing(h);
         h.noteButton.setBackgroundResource(R.drawable.note_error);
         h.noteButton.setBackgroundTintList(null);
         h.noteIcon.setImageResource(R.drawable.ic_retry);
@@ -147,18 +150,22 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
         break;
 
       case DOWNLOADING:
-        // Task 9: ProgressRingView renders DOWNLOADING here. This is the
-        // neutral star-ring placeholder — no arc yet.
+        // Task 9 (DESIGN.md §7.4): the cyan->blue sweep-arc ring takes
+        // over from the star icon while a download is in flight.
+        // percents[position] < 0 means "no progress yet" -> indeterminate
+        // spin; ProgressRingView.setPercent handles both.
         showMeta(h, c);
+        h.noteIcon.setVisibility(View.GONE);
+        h.progressRing.setVisibility(View.VISIBLE);
+        h.progressRing.setPercent(percents[position]);
         h.noteButton.setBackgroundResource(R.drawable.note_ring);
         h.noteButton.setBackgroundTintList(null);
-        h.noteIcon.setImageResource(R.drawable.ic_download);
-        h.noteIcon.setImageTintList(ColorStateList.valueOf(ctx.getColor(R.color.star)));
         break;
 
       case IDLE:
       default:
         showMeta(h, c);
+        hideProgressRing(h);
         h.noteButton.setBackgroundResource(R.drawable.note_ring);
         h.noteButton.setBackgroundTintList(null);
         h.noteIcon.setImageResource(R.drawable.ic_download);
@@ -174,6 +181,18 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
     h.itemView.setOnClickListener(v -> {
       if (onRowClick != null) onRowClick.onRowClick(pos, c);
     });
+  }
+
+  /**
+   * Restores the plain note_icon ImageView and hides progress_ring for
+   * every non-DOWNLOADING state. Called on every bind (including the
+   * rebind {@link #setState} triggers via notifyItemChanged) so a row
+   * recycled out of DOWNLOADING never leaves a stale ring visible —
+   * note_icon's own image/tint is set right after by the caller.
+   */
+  private void hideProgressRing(RowHolder h) {
+    h.progressRing.setVisibility(View.GONE);
+    h.noteIcon.setVisibility(View.VISIBLE);
   }
 
   private void showMeta(RowHolder h, Chart c) {
@@ -397,6 +416,7 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
     final LinearLayout badges;
     final FrameLayout noteButton;
     final ImageView noteIcon;
+    final ProgressRingView progressRing;
 
     RowHolder(View v) {
       super(v);
@@ -407,6 +427,7 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
       badges = v.findViewById(R.id.badges);
       noteButton = v.findViewById(R.id.note_button);
       noteIcon = v.findViewById(R.id.note_icon);
+      progressRing = v.findViewById(R.id.progress_ring);
 
       // Corner-box fix: force-clip both the row and the album art to
       // their rounded outlines, independent of how the platform
