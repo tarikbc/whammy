@@ -7,6 +7,7 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.recyclerview.widget.RecyclerView;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +44,19 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
     void onDownload(int pos, Chart c);
   }
 
+  /** Whole-row tap — the seam the detail screen (DESIGN.md §7.13) hangs
+   *  off of. Fired from itemView's own click listener in
+   *  onBindViewHolder; the note button has its own OnClickListener and,
+   *  being a clickable child, consumes its own taps before they'd ever
+   *  reach the row (standard Android view dispatch — no extra flag
+   *  needed to keep the two from double-firing). */
+  public interface OnRowClick {
+    void onRowClick(int pos, Chart c);
+  }
+
+  /** Set by the host to receive whole-row taps. May be null. */
+  public OnRowClick onRowClick;
+
   /** Instrument -> badge icon (DESIGN.md §7.10/§7.7). Instruments not in
    *  this map (e.g. "band") render no badge — presence of the icon is
    *  the signal, absent ones are simply skipped. "rhythm"/"guitarcoop"
@@ -61,6 +76,20 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
   }
   /** DESIGN.md §7.10: "show up to ~4" instrument badges. */
   private static final int MAX_INSTRUMENT_BADGES = 4;
+
+  /** Chip geometry (DESIGN.md §7.10). These live here as raw dp rather
+   *  than in dimens.xml/styles.xml — this task's file ownership is
+   *  scoped to row_result.xml + ResultsAdapter.java + drawable/ only,
+   *  values/ belongs to another agent — but the numbers themselves are
+   *  exactly the spec's: "~22-24dp tall" (23dp, the midpoint), "8dp
+   *  horizontal padding", "15dp icons". CHIP_ICON_GAP is the small
+   *  internal gap between an icon and its label (or between clustered
+   *  instrument icons) inside a single chip — distinct from
+   *  R.dimen.badge_gap (6dp), which is the gap BETWEEN chips. */
+  private static final float CHIP_HEIGHT_DP = 23f;
+  private static final float CHIP_PADDING_H_DP = 8f;
+  private static final float CHIP_ICON_SIZE_DP = 15f;
+  private static final float CHIP_ICON_GAP_DP = 3f;
 
   private final List<Chart> charts;
   private final DownloadState[] states;
@@ -141,6 +170,10 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
     h.noteButton.setOnClickListener(v -> {
       if (onDownload != null) onDownload.onDownload(pos, c);
     });
+
+    h.itemView.setOnClickListener(v -> {
+      if (onRowClick != null) onRowClick.onRowClick(pos, c);
+    });
   }
 
   private void showMeta(RowHolder h, Chart c) {
@@ -162,56 +195,167 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
 
   /**
    * Builds the badge row (DESIGN.md §7.10) fresh on every bind: clears
-   * whatever the recycled view previously held, then adds only the
-   * badges this chart actually has (instruments -> icons, capped at
-   * {@link #MAX_INSTRUMENT_BADGES}; video; duration; PRO/MOD tags).
-   * Never leaves stale children from a different row behind.
+   * whatever the recycled view previously held (h.badges.removeAllViews
+   * as the very first step — RecyclerView recycles rows, so a stale
+   * chip from a different chart must never survive into this bind),
+   * then adds only the chips this chart actually has: ONE combined
+   * instrument-icon cluster chip, a duration chip, a star-tinted VIDEO
+   * chip, and label-only PRO/MOD chips. Never renders an empty chip for
+   * an absent/false attribute.
    */
   private void buildBadges(RowHolder h, Chart c) {
     Context ctx = h.itemView.getContext();
     h.badges.removeAllViews();
 
-    int shown = 0;
-    for (String instrument : c.instruments) {
-      if (shown >= MAX_INSTRUMENT_BADGES) break;
-      Integer icon = instrument == null ? null : INSTRUMENT_ICONS.get(instrument.toLowerCase(Locale.ROOT));
-      if (icon == null) continue; // no mark for this instrument — skip, never an empty slot
-      addIconBadge(h.badges, ctx, icon);
-      shown++;
-    }
-
-    if (c.hasVideoBackground) addIconBadge(h.badges, ctx, R.drawable.ic_video);
+    buildInstrumentChip(h.badges, ctx, c);
 
     String duration = Chart.formatDuration(c.songLengthMs);
-    if (!duration.isEmpty()) addTextBadge(h.badges, ctx, duration, R.style.Text_Badge);
+    if (!duration.isEmpty()) buildDurationChip(h.badges, ctx, duration);
 
-    if (c.proDrums) addTextBadge(h.badges, ctx, ctx.getString(R.string.badge_pro), R.style.Text_Charter);
-    if (c.modchart) addTextBadge(h.badges, ctx, ctx.getString(R.string.badge_mod), R.style.Text_Charter);
+    if (c.hasVideoBackground) buildVideoChip(h.badges, ctx);
+
+    if (c.proDrums) buildLabelChip(h.badges, ctx, ctx.getString(R.string.badge_pro));
+    if (c.modchart) buildLabelChip(h.badges, ctx, ctx.getString(R.string.badge_mod));
 
     boolean any = h.badges.getChildCount() > 0;
     h.badges.setVisibility(any ? View.VISIBLE : View.GONE);
   }
 
-  private void addIconBadge(LinearLayout row, Context ctx, int drawableRes) {
-    ImageView icon = new ImageView(ctx);
-    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-        (int) ctx.getResources().getDimension(R.dimen.badge_icon_size),
-        (int) ctx.getResources().getDimension(R.dimen.badge_icon_size));
-    if (row.getChildCount() > 0) lp.leftMargin = (int) ctx.getResources().getDimension(R.dimen.badge_gap);
-    icon.setLayoutParams(lp);
-    icon.setImageResource(drawableRes);
-    icon.setImageTintList(ColorStateList.valueOf(ctx.getColor(R.color.text_lo)));
-    row.addView(icon);
+  /**
+   * The instrument chip (DESIGN.md §7.10): ONE chip holding a tidy
+   * cluster of charted-instrument icons (up to {@link
+   * #MAX_INSTRUMENT_BADGES}, then a "+N" overflow label), rather than
+   * five floating marks. Instruments with no mapped icon are skipped
+   * silently (never counted, never leave a gap). Renders nothing when
+   * the chart has no mappable instruments.
+   */
+  private void buildInstrumentChip(LinearLayout row, Context ctx, Chart c) {
+    List<Integer> icons = new ArrayList<>();
+    if (c.instruments != null) {
+      for (String instrument : c.instruments) {
+        Integer icon = instrument == null ? null : INSTRUMENT_ICONS.get(instrument.toLowerCase(Locale.ROOT));
+        if (icon != null) icons.add(icon);
+      }
+    }
+    if (icons.isEmpty()) return;
+
+    LinearLayout chip = newChip(ctx, row, R.drawable.bg_chip);
+    int shown = Math.min(icons.size(), MAX_INSTRUMENT_BADGES);
+    for (int i = 0; i < shown; i++) {
+      ImageView icon = new ImageView(ctx);
+      LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(ctx, CHIP_ICON_SIZE_DP), dp(ctx, CHIP_ICON_SIZE_DP));
+      if (i > 0) lp.leftMargin = dp(ctx, CHIP_ICON_GAP_DP);
+      icon.setLayoutParams(lp);
+      icon.setImageResource(icons.get(i));
+      icon.setImageTintList(ColorStateList.valueOf(ctx.getColor(R.color.text)));
+      chip.addView(icon);
+    }
+
+    int overflow = icons.size() - shown;
+    if (overflow > 0) {
+      TextView tv = new TextView(ctx, null, 0, R.style.Text_Badge);
+      LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+          LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+      lp.leftMargin = dp(ctx, CHIP_ICON_GAP_DP);
+      tv.setLayoutParams(lp);
+      tv.setTextColor(ctx.getColor(R.color.text)); // chip contents are `text`, not the style's default text_lo
+      tv.setText("+" + overflow);
+      chip.addView(tv);
+    }
+
+    row.addView(chip);
   }
 
-  private void addTextBadge(LinearLayout row, Context ctx, String text, int styleRes) {
-    TextView tv = new TextView(ctx, null, 0, styleRes);
+  /** Duration chip: {@code ic_clock} + {@code m:ss} (DESIGN.md §7.10). */
+  private void buildDurationChip(LinearLayout row, Context ctx, String duration) {
+    LinearLayout chip = newChip(ctx, row, R.drawable.bg_chip);
+
+    ImageView icon = new ImageView(ctx);
+    icon.setLayoutParams(new LinearLayout.LayoutParams(dp(ctx, CHIP_ICON_SIZE_DP), dp(ctx, CHIP_ICON_SIZE_DP)));
+    icon.setImageResource(R.drawable.ic_clock);
+    icon.setImageTintList(ColorStateList.valueOf(ctx.getColor(R.color.text)));
+    chip.addView(icon);
+
+    TextView tv = new TextView(ctx, null, 0, R.style.Text_Badge);
     LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
         LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-    if (row.getChildCount() > 0) lp.leftMargin = (int) ctx.getResources().getDimension(R.dimen.badge_gap);
+    lp.leftMargin = dp(ctx, CHIP_ICON_GAP_DP);
     tv.setLayoutParams(lp);
-    tv.setText(text);
-    row.addView(tv);
+    tv.setTextColor(ctx.getColor(R.color.text));
+    tv.setText(duration);
+    chip.addView(tv);
+
+    row.addView(chip);
+  }
+
+  /**
+   * Video chip: {@code ic_video} + {@code VIDEO}, given the row's one
+   * bit of color (DESIGN.md §7.10) — star-tinted icon on a
+   * star-hairlined chip shell ({@code bg_chip_video}). The label itself
+   * stays `text` (not `star`) — only the icon + hairline carry the
+   * accent, per spec.
+   */
+  private void buildVideoChip(LinearLayout row, Context ctx) {
+    LinearLayout chip = newChip(ctx, row, R.drawable.bg_chip_video);
+
+    ImageView icon = new ImageView(ctx);
+    icon.setLayoutParams(new LinearLayout.LayoutParams(dp(ctx, CHIP_ICON_SIZE_DP), dp(ctx, CHIP_ICON_SIZE_DP)));
+    icon.setImageResource(R.drawable.ic_video);
+    icon.setImageTintList(ColorStateList.valueOf(ctx.getColor(R.color.star)));
+    chip.addView(icon);
+
+    TextView tv = new TextView(ctx, null, 0, R.style.Text_Charter); // +6% letter-spacing, UPPER
+    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+    lp.leftMargin = dp(ctx, CHIP_ICON_GAP_DP);
+    tv.setLayoutParams(lp);
+    tv.setTextColor(ctx.getColor(R.color.text));
+    // No R.string.badge_video exists (strings.xml is outside this task's
+    // file scope — values/ belongs to another agent); literal is safe
+    // since Text.Charter already applies textAllCaps.
+    tv.setText("VIDEO");
+    chip.addView(tv);
+
+    row.addView(chip);
+  }
+
+  /** Label-only text chip (PRO / MOD): {@code text}, +6% letter-spacing, UPPER (DESIGN.md §7.10). */
+  private void buildLabelChip(LinearLayout row, Context ctx, String label) {
+    LinearLayout chip = newChip(ctx, row, R.drawable.bg_chip);
+
+    TextView tv = new TextView(ctx, null, 0, R.style.Text_Charter);
+    tv.setLayoutParams(new LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+    tv.setTextColor(ctx.getColor(R.color.text)); // Text.Charter defaults to text_lo — chips want `text`
+    tv.setText(label);
+    chip.addView(tv);
+
+    row.addView(chip);
+  }
+
+  /**
+   * Shared chip shell (DESIGN.md §7.10): {@code backgroundRes} fill
+   * ({@code bg_chip} or the star-hairlined {@code bg_chip_video}),
+   * ~23dp tall, 8dp horizontal padding, ~6dp ({@link R.dimen#badge_gap})
+   * from the previous chip in {@code row} (no margin on the first).
+   */
+  private LinearLayout newChip(Context ctx, LinearLayout row, int backgroundRes) {
+    LinearLayout chip = new LinearLayout(ctx);
+    chip.setOrientation(LinearLayout.HORIZONTAL);
+    chip.setGravity(Gravity.CENTER_VERTICAL);
+    chip.setBackgroundResource(backgroundRes);
+    int hPad = dp(ctx, CHIP_PADDING_H_DP);
+    chip.setPadding(hPad, 0, hPad, 0);
+
+    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.WRAP_CONTENT, dp(ctx, CHIP_HEIGHT_DP));
+    if (row.getChildCount() > 0) lp.leftMargin = (int) ctx.getResources().getDimension(R.dimen.badge_gap);
+    chip.setLayoutParams(lp);
+    return chip;
+  }
+
+  private static int dp(Context ctx, float valueDp) {
+    return Math.round(valueDp * ctx.getResources().getDisplayMetrics().density);
   }
 
   /**

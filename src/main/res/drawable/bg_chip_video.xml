@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Video badge chip background (DESIGN.md §7.10): identical shell to
+  bg_chip (surface_hi fill, r_sm 12dp corners) but the hairline is
+  `star` instead of `edge_hair` — the video chip's icon is also
+  star-tinted at the use site, together the one bit of color the
+  badge row earns.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+  <solid android:color="@color/surface_hi" />
+  <corners android:radius="@dimen/r_sm" />
+  <stroke android:width="1dp" android:color="@color/star" />
+</shape>

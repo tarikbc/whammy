@@ -83,16 +83,21 @@
           android:text="@string/download_failed"
           android:visibility="gone" />
 
-      <!-- Badges (DESIGN.md §7.10): a third line under meta — instrument
-           icons, video, duration, PRO/MOD tags. Populated entirely by
-           ResultsAdapter (children added/removed per bind, never
-           reused across rows) since which badges appear varies per
-           chart; only present/true attributes render, no empty slots.
-           Hidden entirely (gone) on ERROR rows, where error_text takes
-           the line instead. android:clipChildren="true" (the default)
-           on this ViewGroup means, on a narrow row, badges that don't
-           fit the text column's width are simply clipped rather than
-           wrapping to a second line. -->
+      <!-- Badges (DESIGN.md §7.10): a third line under meta, now legible
+           CHIPS (bg_chip: surface_hi fill, r_sm corners, edge_hair
+           hairline) instead of the old dim floating marks — one
+           combined instrument-icon cluster chip, a duration chip, a
+           star-tinted VIDEO chip, and label-only PRO/MOD chips.
+           Populated entirely by ResultsAdapter, which clears/rebuilds
+           every child on every bind (h.badges.removeAllViews() first
+           thing in buildBadges()) so a recycled row never shows a
+           prior song's chips; only present/true attributes render, no
+           empty chips. Hidden entirely (gone) on ERROR rows, where
+           error_text takes the line instead. android:clipChildren
+           ="true" (the default) on this ViewGroup means, on a narrow
+           row, trailing chips that don't fit the text column's width
+           are simply clipped rather than wrapping to a second line —
+           the badges stay one line. -->
       <LinearLayout
           android:id="@+id/badges"
           android:layout_width="match_parent"

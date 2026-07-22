@@ -1,19 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Instrument badge: bass. DESIGN.md §7.7/§7.10: 24 grid, 2dp stroke, monochrome. Rectangular body distinguishes it from ic_inst_guitar's round body. -->
+<!--
+  Instrument badge: bass. DESIGN.md §7.7/§7.10: 24 grid, 2dp stroke,
+  monochrome. A trapezoid (double-cutaway-ish) body + a long, straight
+  vertical neck + a flat headstock bar with tuning-peg ticks — the
+  straight neck and blocky body read distinctly from ic_inst_guitar's
+  waisted body and diagonal neck at chip size.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
   <path
-      android:pathData="M6,13 L13,13 L13,19 L6,19 Z"
+      android:pathData="M7,13 L13,13 L14,19.5 L6,19.5 Z"
       android:strokeColor="#FFFFFF"
       android:strokeWidth="2"
       android:strokeLineCap="round"
       android:strokeLineJoin="round"
       android:fillColor="#00000000" />
   <path
-      android:pathData="M10,13 L10,4 M8,4 L12,4"
+      android:pathData="M10,13 L10,3.3"
+      android:strokeColor="#FFFFFF"
+      android:strokeWidth="2"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"
+      android:fillColor="#00000000" />
+  <path
+      android:pathData="M7.3,3.3 L12.7,3.3 M7.8,3.3 L6.7,1.6 M12.2,3.3 L13.3,1.6"
       android:strokeColor="#FFFFFF"
       android:strokeWidth="2"
       android:strokeLineCap="round"
