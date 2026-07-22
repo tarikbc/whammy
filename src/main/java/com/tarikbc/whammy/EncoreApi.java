@@ -31,6 +31,28 @@ public class EncoreApi {
         return parseSearchResults(body);
     }
 
+    /**
+     * HEAD request for the .sng's byte size (the "how heavy" indicator on
+     * the detail screen) — never throws, returns -1 on any failure/unknown
+     * length so callers can just omit the size rather than handle IOException.
+     */
+    public static long contentLength(String md5) {
+        HttpURLConnection c = null;
+        try {
+            c = (HttpURLConnection) new URL(fileUrl(md5)).openConnection();
+            c.setRequestMethod("HEAD");
+            c.setConnectTimeout(15000); c.setReadTimeout(15000);
+            c.setRequestProperty("User-Agent", "Whammy/1.0");
+            int code = c.getResponseCode();
+            if (code < 200 || code >= 300) return -1;
+            return c.getContentLengthLong();
+        } catch (Exception e) {
+            return -1;
+        } finally {
+            if (c != null) c.disconnect();
+        }
+    }
+
     public static void downloadSng(String md5, File dest, ProgressListener cb) throws IOException {
         HttpURLConnection c = (HttpURLConnection) new URL(fileUrl(md5)).openConnection();
         c.setConnectTimeout(15000); c.setReadTimeout(60000);

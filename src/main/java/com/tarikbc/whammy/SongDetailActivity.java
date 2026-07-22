@@ -25,11 +25,23 @@ import java.util.Map;
  */
 public class SongDetailActivity extends Activity {
 
+  /** Mirrors {@link ResultsAdapter.DownloadState} but tracked locally —
+   *  this screen has no adapter position to key off of, just the one
+   *  pinned Download button. */
+  private enum DlState { IDLE, DOWNLOADING, DONE, ERROR }
+
+  private Chart chart;
+  private DlState dlState = DlState.IDLE;
+  private int dlPercent = -1;
+  /** Human-readable size ("227 MB"), filled in once EncoreApi.contentLength
+   *  resolves; null while pending or unknown (§10: "omit the size"). */
+  private String sizeLabel;
+
   @Override protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_song_detail);
 
-    Chart chart = (Chart) getIntent().getSerializableExtra("chart");
+    chart = (Chart) getIntent().getSerializableExtra("chart");
     if (chart == null) {
       // Defensive: this screen has nothing to show without a chart.
       finish();
@@ -178,13 +190,84 @@ public class SongDetailActivity extends Activity {
     container.setVisibility(View.VISIBLE);
   }
 
+  /** Wires the full-width Download button (DESIGN.md §7.6/§7.13): the
+   *  same permission-gate → background-download → place-in-Songs-folder
+   *  flow the search rows use ({@link DownloadHelper}), reflected in the
+   *  button's own label/state since this screen has no adapter row to
+   *  drive a progress ring on. Also kicks off the "how heavy" size fetch
+   *  (user-requested §10 feature) so the button's idle label reads
+   *  "Download · 227 MB" once the HEAD request resolves. */
   private void bindDownloadButton() {
-    View downloadButton = findViewById(R.id.download_button);
+    TextView downloadButton = findViewById(R.id.download_button);
+    updateDownloadButtonLabel(downloadButton);
+
     downloadButton.setOnClickListener(v -> {
-      // Task 10: wire download + state (idle→progress→done→error),
-      // shares row DownloadState.
-      Toast.makeText(this, "Download coming soon", Toast.LENGTH_SHORT).show();
+      if (dlState == DlState.DOWNLOADING) return; // ignore taps mid-flight
+
+      if (!Permissions.hasAllFiles()) {
+        Toast.makeText(this,
+            "Whammy needs storage access to save charts — opening settings…",
+            Toast.LENGTH_LONG).show();
+        Permissions.requestAllFiles(this);
+        return;
+      }
+
+      dlState = DlState.DOWNLOADING;
+      dlPercent = -1;
+      updateDownloadButtonLabel(downloadButton);
+
+      DownloadHelper.start(this, chart, new DownloadHelper.Callback() {
+        @Override public void onProgress(int percent) {
+          dlPercent = percent;
+          updateDownloadButtonLabel(downloadButton);
+        }
+        @Override public void onDone(java.io.File placed) {
+          dlState = DlState.DONE;
+          updateDownloadButtonLabel(downloadButton);
+          Toast.makeText(SongDetailActivity.this,
+              "Added: " + chart.name + " · Scan your library in Clone Hero",
+              Toast.LENGTH_LONG).show();
+        }
+        @Override public void onError(Exception e) {
+          dlState = DlState.ERROR;
+          updateDownloadButtonLabel(downloadButton);
+        }
+      });
     });
+
+    fetchSize(downloadButton);
+  }
+
+  /** HEAD-requests the .sng's byte size on a background thread; -1/failure
+   *  is handled by simply leaving {@link #sizeLabel} null (no size shown). */
+  private void fetchSize(TextView downloadButton) {
+    new Thread(() -> {
+      long bytes = EncoreApi.contentLength(chart.md5);
+      runOnUiThread(() -> {
+        if (bytes > 0) sizeLabel = LibraryAdapter.formatBytes(bytes);
+        updateDownloadButtonLabel(downloadButton);
+      });
+    }).start();
+  }
+
+  /** Renders the button label for the current {@link #dlState}, folding
+   *  in {@link #sizeLabel} on the idle label once/if it's known. */
+  private void updateDownloadButtonLabel(TextView downloadButton) {
+    switch (dlState) {
+      case DOWNLOADING:
+        downloadButton.setText(dlPercent >= 0 ? "Downloading… " + dlPercent + "%" : "Downloading…");
+        break;
+      case DONE:
+        downloadButton.setText("Added ✓");
+        break;
+      case ERROR:
+        downloadButton.setText("Retry download");
+        break;
+      case IDLE:
+      default:
+        downloadButton.setText(sizeLabel != null ? "Download · " + sizeLabel : "Download");
+    }
+    // TODO promote "Download"/"Downloading…"/"Added ✓"/"Retry download" to strings.xml
   }
 
   /** Builds one label-only chip (PRO DRUMS / MOD / VOCALS): DESIGN.md

@@ -86,13 +86,47 @@
         android:focusable="true" />
   </LinearLayout>
 
-  <!-- TEMP Task 8 demo — replaced by live wiring in Task 10.
-       RecyclerView is added into this container programmatically by
+  <!-- RecyclerView is added into this container programmatically by
        MainActivity (not declared here as an XML tag) — see
-       ResultsAdapter / task-8-report.md for why. -->
+       ResultsAdapter / task-8-report.md for why. empty_state is a
+       sibling child stacked on top of it (DESIGN.md §7.5): MainActivity
+       toggles between the two, swapping empty_state's headline/sub
+       between the first-launch copy (default, below) and the
+       no-results copy for a query that came back empty. -->
   <FrameLayout
       android:id="@+id/results_container"
       android:layout_width="match_parent"
       android:layout_height="0dp"
-      android:layout_weight="1" />
+      android:layout_weight="1">
+
+    <LinearLayout
+        android:id="@+id/empty_state"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingStart="@dimen/screen_padding_h"
+        android:paddingEnd="@dimen/screen_padding_h">
+
+      <!-- TODO promote "Find your setlist" to strings.xml -->
+      <TextView
+          android:id="@+id/empty_headline"
+          style="@style/Text.HeroHeadline"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:gravity="center"
+          android:text="Find your setlist" />
+
+      <!-- TODO promote "Search the Encore database..." to strings.xml -->
+      <TextView
+          android:id="@+id/empty_sub"
+          style="@style/Text.Body"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="@dimen/space_8"
+          android:gravity="center"
+          android:text="Search the Encore database and drop songs straight into Clone Hero." />
+    </LinearLayout>
+  </FrameLayout>
 </LinearLayout>
