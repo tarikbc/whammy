@@ -61,8 +61,10 @@ cd "$OUT/apk" && cp base.ap_ whammy.unsigned.apk && cd - >/dev/null
 # RELEASE key from GitHub Secrets on tag builds, so published releases are
 # stably signed (updates install over each other).
 KEYSTORE="${KEYSTORE:-keystore/whammy-debug.jks}"
-STOREPASS="${STOREPASS:-whammy123}"
-KEYPASS="${KEYPASS:-whammy123}"
+# Exported so apksigner can read them from the environment (env: spec below)
+# instead of the process argv, where `ps` would expose a real release password.
+export STOREPASS="${STOREPASS:-whammy123}"
+export KEYPASS="${KEYPASS:-whammy123}"
 KEYALIAS="${KEYALIAS:-whammy}"
 if [ "$KEYSTORE" = "keystore/whammy-debug.jks" ] && [ ! -f "$KEYSTORE" ]; then
   mkdir -p keystore
@@ -70,6 +72,6 @@ if [ "$KEYSTORE" = "keystore/whammy-debug.jks" ] && [ ! -f "$KEYSTORE" ]; then
     -keypass "$KEYPASS" -alias "$KEYALIAS" -keyalg RSA -keysize 2048 -validity 10000 \
     -dname "CN=Whammy Debug, O=Whammy" >/dev/null 2>&1
 fi
-"$BT/apksigner" sign --ks "$KEYSTORE" --ks-pass "pass:$STOREPASS" \
-  --key-pass "pass:$KEYPASS" --ks-key-alias "$KEYALIAS" "$OUT/whammy.apk"
+"$BT/apksigner" sign --ks "$KEYSTORE" --ks-pass "env:STOREPASS" \
+  --key-pass "env:KEYPASS" --ks-key-alias "$KEYALIAS" "$OUT/whammy.apk"
 echo "built $OUT/whammy.apk"

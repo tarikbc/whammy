@@ -39,28 +39,26 @@ jobs:
         if: github.ref_type == 'tag'
         env:
           KS_B64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
-          STOREPASS: ${{ secrets.RELEASE_STORE_PASSWORD }}
-          KEYPASS: ${{ secrets.RELEASE_KEY_PASSWORD }}
-          KEYALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
         run: |
           if [ -n "$KS_B64" ]; then
             mkdir -p keystore
             printf '%s' "$KS_B64" | base64 -d > keystore/whammy-release.jks
-            {
-              echo "KEYSTORE=keystore/whammy-release.jks"
-              echo "STOREPASS=$STOREPASS"
-              echo "KEYPASS=$KEYPASS"
-              echo "KEYALIAS=$KEYALIAS"
-            } >> "$GITHUB_ENV"
-            echo "Release key configured — publishing a release-signed APK."
+            echo "Release key decoded — a release-signed APK will be published."
           else
             echo "::warning::No RELEASE_KEYSTORE_BASE64 secret set; this release will be debug-signed."
           fi
 
+      # Signing secrets are referenced ONLY here (scoped to this step's env),
+      # never written to $GITHUB_ENV. For non-tag builds these expand to '',
+      # so build.sh falls back to its throwaway debug key.
       - name: Build APK
         env:
           VERSION_NAME: ${{ github.ref_type == 'tag' && github.ref_name || 'dev' }}
           VERSION_CODE: ${{ github.run_number }}
+          KEYSTORE: ${{ github.ref_type == 'tag' && secrets.RELEASE_KEYSTORE_BASE64 != '' && 'keystore/whammy-release.jks' || '' }}
+          STOREPASS: ${{ github.ref_type == 'tag' && secrets.RELEASE_STORE_PASSWORD || '' }}
+          KEYPASS: ${{ github.ref_type == 'tag' && secrets.RELEASE_KEY_PASSWORD || '' }}
+          KEYALIAS: ${{ github.ref_type == 'tag' && secrets.RELEASE_KEY_ALIAS || '' }}
         run: ./build.sh
 
       - name: Upload APK artifact
