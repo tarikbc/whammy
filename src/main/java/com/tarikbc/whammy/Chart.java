@@ -6,7 +6,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-public class Chart {
+public class Chart implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
     public final String md5, name, artist, charter, albumArtMd5;
     public final List<String> instruments;
     public final boolean hasVideoBackground;
