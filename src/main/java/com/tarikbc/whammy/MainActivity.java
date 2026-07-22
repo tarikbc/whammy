@@ -408,9 +408,14 @@ public class MainActivity extends Activity {
     if (!selectionMode) return;
     selectionCount.setText(getString(R.string.selection_count_fmt, count));
     selectionDownload.setText(getString(R.string.download_n_fmt, count));
-    selectionSelectAll.setEnabled(true);
-    selectionDownload.setEnabled(count > 0);
-    selectionDownload.setAlpha(count > 0 ? 1f : 0.45f);
+    // While a batch is actually running (batchQueue != null), the buttons stay
+    // disabled so a stray row toggle can't re-enable Download and spawn a
+    // second overlapping queue (see startBatchDownload's reentrancy guard).
+    boolean busy = batchQueue != null;
+    boolean canDownload = !busy && count > 0;
+    selectionSelectAll.setEnabled(!busy);
+    selectionDownload.setEnabled(canDownload);
+    selectionDownload.setAlpha(canDownload ? 1f : 0.45f);
   }
 
   /** Cancel/✕ and the system back button (DESIGN.md task B2) both funnel
@@ -440,6 +445,7 @@ public class MainActivity extends Activity {
    *  selections are just re-downloaded, per spec. */
   private void startBatchDownload() {
     if (adapter == null || !adapter.isSelectionMode()) return;
+    if (batchQueue != null) return;   // a batch is already running — reentrancy guard
     List<Integer> positions = adapter.getSelectedPositionsSorted();
     if (positions.isEmpty()) return;
 
@@ -488,7 +494,7 @@ public class MainActivity extends Activity {
     Chart chart = forAdapter.chartAt(pos);
 
     forAdapter.setState(pos, ResultsAdapter.DownloadState.DOWNLOADING, -1);
-    DownloadHelper.start(this, chart, new DownloadHelper.Callback() {
+    boolean started = DownloadHelper.start(this, chart, new DownloadHelper.Callback() {
       @Override public void onProgress(int percent) {
         if (adapter == forAdapter) forAdapter.setState(pos, ResultsAdapter.DownloadState.DOWNLOADING, percent);
       }
@@ -507,6 +513,17 @@ public class MainActivity extends Activity {
         runNextBatchItem();
       }
     });
+    // DownloadHelper.start returns false WITHOUT firing any callback (e.g.
+    // all-files access was revoked mid-batch). Treat as a failure and advance
+    // — otherwise the row stays stuck DOWNLOADING and the queue hangs forever.
+    // Posted (not recursed) so a whole batch failing synchronously can't blow
+    // the stack.
+    if (!started) {
+      if (adapter == forAdapter) forAdapter.setState(pos, ResultsAdapter.DownloadState.ERROR, 0);
+      batchFail++;
+      batchIndex++;
+      mainHandler.post(this::runNextBatchItem);
+    }
   }
 
   /** Every selected chart has been attempted: refreshes the "already

@@ -145,7 +145,7 @@ public class EncoreApi {
                     throw new IOException("download http " + code);
                 }
 
-                ResumeDecision decision = decideResume(code, existingBytes, c.getContentLength());
+                ResumeDecision decision = decideResume(code, existingBytes, c.getContentLengthLong());
                 if (decision == null) {
                     // 416: the local .part is stale for this range (e.g. the
                     // remote file's size changed) -- drop it and retry once
@@ -190,7 +190,7 @@ public class EncoreApi {
      *
      * @param code HTTP response code; must be 200, 206, or 416.
      */
-    static ResumeDecision decideResume(int code, long existingBytes, int contentLength) {
+    static ResumeDecision decideResume(int code, long existingBytes, long contentLength) {
         if (code == 416) return null;
         if (code != 200 && code != 206) {
             throw new IllegalArgumentException("decideResume expects 200/206/416, got " + code);
@@ -199,7 +199,7 @@ public class EncoreApi {
         // (existingBytes > 0) -- a byte-0-only request oddly reporting 206
         // would still just be "the whole file", so still don't append.
         boolean append = code == 206 && existingBytes > 0;
-        int total = contentLength < 0 ? -1 : (append ? (int) (contentLength + existingBytes) : contentLength);
+        long total = contentLength < 0 ? -1 : (append ? contentLength + existingBytes : contentLength);
         return new ResumeDecision(append, total);
     }
 
@@ -208,8 +208,8 @@ public class EncoreApi {
         /** Whether to append to the existing {@code .part} (true) or truncate/start clean (false). */
         final boolean append;
         /** Total expected file size once complete, or -1 if unknown. */
-        final int total;
-        ResumeDecision(boolean append, int total) {
+        final long total;
+        ResumeDecision(boolean append, long total) {
             this.append = append;
             this.total = total;
         }
