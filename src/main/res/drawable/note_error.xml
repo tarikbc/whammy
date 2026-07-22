@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Note button — ERROR state (DESIGN.md §7.4): ring turns `fret_red`
+  (fixed — not tinted per row, errors are always red), glyph becomes
+  a retry (circular arrow) drawn on top by the adapter.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+  <stroke android:width="2dp" android:color="@color/fret_red" />
+  <solid android:color="@android:color/transparent" />
+</shape>

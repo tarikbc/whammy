@@ -1,1 +1,7 @@
-<resources><string name="app_name">Whammy</string></resources>
+<resources>
+  <string name="app_name">Whammy</string>
+  <!-- Result row (DESIGN.md §7.3/§7.4) -->
+  <string name="charted_by_fmt">Charted by %1$s</string>
+  <string name="download_failed">Download failed · tap to retry</string>
+</resources>
+

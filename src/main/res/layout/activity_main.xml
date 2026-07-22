@@ -1,10 +1,23 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical">
+
   <TextView
       style="@style/Text.Wordmark"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:layout_gravity="center"
-      android:textSize="34sp"
+      android:layout_marginStart="@dimen/screen_padding_h"
+      android:layout_marginTop="@dimen/space_24"
+      android:textSize="26sp"
       android:text="WHAMMY" />
-</FrameLayout>
+
+  <!-- TEMP Task 8 demo — replaced by live wiring in Task 10.
+       RecyclerView is added into this container programmatically by
+       MainActivity (not declared here as an XML tag) — see
+       ResultsAdapter / task-8-report.md for why. -->
+  <FrameLayout
+      android:id="@+id/results_container"
+      android:layout_width="match_parent"
+      android:layout_height="0dp"
+      android:layout_weight="1" />
+</LinearLayout>

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Result row (DESIGN.md §7.3): lane_light (3dp) . text column (title +
+  meta) . note button (48dp). Inflated per-item by ResultsAdapter via
+  a plain LayoutInflater call (no RecyclerView XML tag involved, so no
+  androidx attribute resolution happens here — see ResultsAdapter /
+  MainActivity for why RecyclerView itself is built programmatically).
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/row_min_height"
+    android:background="@drawable/bg_row">
+
+  <!-- Lane-light: the row's identity color, tinted per position%5 at bind time -->
+  <View
+      android:id="@+id/lane_light"
+      android:layout_width="@dimen/lane_light_width"
+      android:layout_height="match_parent"
+      android:layout_gravity="start"
+      android:layout_marginStart="8dp"
+      android:layout_marginTop="@dimen/lane_light_inset_v"
+      android:layout_marginBottom="@dimen/lane_light_inset_v"
+      android:background="@drawable/lane_light" />
+
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:minHeight="@dimen/row_min_height"
+      android:orientation="horizontal"
+      android:gravity="center_vertical"
+      android:paddingStart="@dimen/row_padding_h"
+      android:paddingEnd="@dimen/row_padding_h"
+      android:paddingTop="@dimen/row_padding_v"
+      android:paddingBottom="@dimen/row_padding_v">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+      <TextView
+          android:id="@+id/title"
+          style="@style/Text.Title"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content" />
+
+      <!-- Rest / done / downloading meta: artist · CHARTED BY XXX -->
+      <LinearLayout
+          android:id="@+id/meta_row"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="@dimen/title_artist_gap"
+          android:orientation="horizontal"
+          android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/artist"
+            style="@style/Text.Artist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            style="@style/Text.Artist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" · " />
+
+        <TextView
+            android:id="@+id/charter"
+            style="@style/Text.Charter"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:ellipsize="end" />
+      </LinearLayout>
+
+      <!-- Error meta: replaces meta_row per DESIGN.md §7.4 / mockup -->
+      <TextView
+          android:id="@+id/error_text"
+          style="@style/Text.Charter"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="@dimen/title_artist_gap"
+          android:textColor="@color/fret_red"
+          android:text="@string/download_failed"
+          android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- Note button: 48dp FrameLayout container. ResultsAdapter swaps its
+         background (note_ring / note_done / note_error) and the icon per
+         DownloadState. Task 9: ProgressRingView is added as a further
+         child of this same FrameLayout to render DOWNLOADING — no
+         restructuring needed. -->
+    <FrameLayout
+        android:id="@+id/note_button"
+        android:layout_width="@dimen/note_button_size"
+        android:layout_height="@dimen/note_button_size"
+        android:layout_marginStart="@dimen/space_12"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="@drawable/note_ring">
+
+      <ImageView
+          android:id="@+id/note_icon"
+          android:layout_width="22dp"
+          android:layout_height="22dp"
+          android:layout_gravity="center"
+          android:src="@drawable/ic_download" />
+    </FrameLayout>
+  </LinearLayout>
+</FrameLayout>

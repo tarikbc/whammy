@@ -7,10 +7,42 @@ PKG=com.tarikbc.whammy; OUT=build; rm -rf "$OUT"; mkdir -p "$OUT/gen" "$OUT/obj"
 find src/main/res -name '*.xml' -o -name '*.png' -o -name '*.ttf' | while read f; do
   "$BT/aapt2" compile "$f" -o "$OUT/obj" >/dev/null; done 2>/dev/null || \
   "$BT/aapt2" compile --dir src/main/res -o "$OUT/obj/res.zip"
+
+# RecyclerView needs androidx.recyclerview.R (R.attr.recyclerViewStyle /
+# R.styleable.RecyclerView.* etc.) to exist and be loadable at runtime —
+# its precompiled bytecode reads them unconditionally on every
+# construction, XML or programmatic (confirmed by disassembly; see
+# task-8-report.md). This build never merges AARs by default, so we
+# vendor just the res/ + AndroidManifest.xml of every AAR whose classes
+# actually reference their own R — found by grepping every vendored jar's
+# .class files for "/R$" (javap chokes on some Kotlin classes, so this
+# byte-level grep is the reliable check): recyclerview, androidx.core
+# (ViewCompat's <clinit> reads androidx.core.R$id), customview-
+# poolingcontainer, and lifecycle-runtime — into libs/aar/<name>/,
+# compile them alongside the app's own res, and use --extra-packages so
+# aapt2 emits real R.java files for each package backed by the same
+# merged resource table. No other vendored jar (annotation/collection/
+# customview/core-runtime/interpolator/kotlin-stdlib) references its own
+# R at all, so their resources are never needed here.
+EXTRA_PKGS=""
+AAR_RES_ARGS=()
+if [ -d libs/aar ]; then
+  for aar in libs/aar/*/; do
+    name="$(basename "$aar")"
+    [ -d "${aar}res" ] || continue
+    "$BT/aapt2" compile --dir "${aar}res" -o "$OUT/obj/aar_${name}.zip"
+    AAR_RES_ARGS+=("$OUT/obj/aar_${name}.zip")
+    pkg="$(grep -o 'package="[^"]*"' "${aar}AndroidManifest.xml" | head -1 | sed 's/package="//;s/"$//')"
+    [ -n "$pkg" ] && EXTRA_PKGS="${EXTRA_PKGS:+$EXTRA_PKGS:}$pkg"
+  done
+fi
+
 "$BT/aapt2" link -o "$OUT/apk/base.ap_" -I "$PLAT" \
   --manifest src/main/AndroidManifest.xml --java "$OUT/gen" \
   --min-sdk-version 26 --target-sdk-version 34 \
-  $(ls "$OUT/obj"/*.flat 2>/dev/null) $([ -f "$OUT/obj/res.zip" ] && echo "$OUT/obj/res.zip")
+  ${EXTRA_PKGS:+--extra-packages "$EXTRA_PKGS"} \
+  $(ls "$OUT/obj"/*.flat 2>/dev/null) $([ -f "$OUT/obj/res.zip" ] && echo "$OUT/obj/res.zip") \
+  "${AAR_RES_ARGS[@]}"
 # 2. compile java (app sources + generated R + any libs)
 CP="$PLAT"; for j in libs/*.jar; do [ -e "$j" ] && CP="$CP:$j"; done
 find src/main/java "$OUT/gen" -name '*.java' > "$OUT/srcs.txt"

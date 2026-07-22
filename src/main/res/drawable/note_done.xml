@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Note button — DONE state (DESIGN.md §7.4): a filled `fret_green` disc
+  with a check glyph (`on_accent`) drawn on top by the adapter. A soft
+  top-left radial highlight layer approximates the glass sheen
+  (`inset 0 1px 0 rgba(255,255,255,.4)` in the mockup) without needing
+  a custom View.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+  <item>
+    <shape android:shape="oval">
+      <solid android:color="@color/fret_green" />
+    </shape>
+  </item>
+  <item>
+    <shape android:shape="oval">
+      <gradient
+          android:type="radial"
+          android:gradientRadius="24dp"
+          android:centerX="0.5"
+          android:centerY="0.32"
+          android:startColor="#33FFFFFF"
+          android:endColor="#00FFFFFF" />
+    </shape>
+  </item>
+</layer-list>
