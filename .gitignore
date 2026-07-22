@@ -23,3 +23,7 @@ libs/
 .DS_Store
 .idea/
 *.iml
+
+# Internal workflow docs / scratch — not for the public repo
+docs/superpowers/
+.superpowers/
