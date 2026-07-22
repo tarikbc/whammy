@@ -281,12 +281,12 @@ Ship as vector drawables; tint via `app:tint` to the contextual color.
 Slim inline pill (or reuse the snackbar) after a successful download: `scan` icon in `star` + `Scan your library in Clone Hero to see new charts.` (`Scan` emphasized `text_hi`). Auto-dismiss or a small `Got it`.
 
 ### 7.10 Song badges (metadata at a glance)
-A compact, monochrome badge row on each result — enough to judge a chart without opening it, quiet enough not to fight the title or cover. All badges are `text_lo` on transparent (no fills), 11sp / 2dp-stroke icons, ~6dp apart. Data comes straight from the search result:
-- **Instruments** (`notesData.instruments`): small icons for the charted instruments — `guitar`, `bass`, `drums`, `keys`, `vocals` (and `guitarghl` → a "6" GHL mark). Show up to ~4; the presence of the icon is the signal, no counts.
-- **Video** (`hasVideoBackground` true): a `video` badge (film glyph) — the "has a background video" cue.
-- **Duration** (`song_length` ms → `m:ss`): a text badge, e.g. `5:36`.
-- **Pro drums** (`pro_drums`) and **Modchart** (`modchart`): tiny text tags `PRO` / `MOD` only when true, `text_lo` +6% UPPER — secondary, easy to skip.
-Never render a badge for an absent/false attribute (no empty slots). On very narrow rows, drop trailing badges before wrapping — the row stays one visual line of chips.
+A compact badge row on each result — enough to judge a chart without opening it, quiet enough not to fight the title or cover. **Legibility first:** the earlier version (dim `text_lo` 2dp-stroke marks floating on the row) read as noise. Badges are now proper **chips**: a `surface_hi` fill, `r_sm` 12dp corners (pill), `edge_hair` hairline, **~22–24dp tall**, 8dp horizontal padding, `text` (not `text_lo`) contents, ~6dp apart. Each chip is one clear unit.
+- **Instruments** — ONE combined chip holding the charted-instrument icons in a tidy cluster (`guitar`, `bass`, `drums`, `keys`, `vocals`; `guitarghl` → a "6" GHL mark), 15dp icons, `text` tint. Grouping them in a single chip reads far cleaner than five floating marks. Show up to ~4 icons, then `+N`.
+- **Duration** (`song_length` ms → `m:ss`): a chip with a small `clock` icon + `4:11`.
+- **Video** (`hasVideoBackground`): a chip with the `video` (film) glyph + label `VIDEO`, given a faint `star` tint (icon + hairline in `star`) since it's a standout feature — the one bit of color the badge row earns.
+- **Pro drums** (`pro_drums`) → chip `PRO`; **Modchart** (`modchart`) → chip `MOD`: label-only chips, `text` +6% UPPER, only when true.
+Icons must be **recognizable at chip size** — a real guitar silhouette, drum kit, mic, piano keys — not abstract 2dp glyphs. Never render a chip for an absent/false attribute (no empty chips). On a narrow row, drop trailing chips before wrapping — the badges stay one line. Full metadata lives on the detail screen (7.13); the row badges are the at-a-glance subset.
 
 ### 7.11 Filters (search refinement)
 A single horizontal, scrollable **filter chip** rail directly under the search field (hidden until there is a search context). Chips are `surface_hi`, `r_sm` 12dp, `edge_hair`; **selected** = `star` 1.5dp stroke + faint cyan glow + `text_hi` label; unselected = `text` label.
@@ -304,6 +304,16 @@ Opened from the app bar `library` glyph (7.1); its own screen over the stage, wi
 
 ### 7.1b App-bar library entry
 The app bar (7.1) carries a single **`library`** glyph at the trailing edge (`text_lo`, 24-grid) that opens the Library screen (7.12). It replaces the generic overflow glyph as the one top-level action; settings, if ever needed, move elsewhere. Keep the bar otherwise clean.
+
+### 7.13 Song detail screen
+Tapping a result row opens a detail screen over the stage (back returns to the list, preserving scroll). It answers "is this the chart I want?" with everything the search result already carries — **no extra network call**. It's the second hero moment after the empty state.
+- **Hero header:** the album art large (**112dp**, `r_md` 16dp, `edge_hair`), optionally echoed as a soft, heavily-blurred + darkened bloom bleeding from behind the header (art as ambient light — keep it subtle so text stays legible; skip the blur if cheap options aren't available and just use the stage). Beside/under it: **title** (Archivo Expanded SemiBold ~24sp `text_hi`, up to 2 lines), **artist** (Archivo Medium 16sp `text`), and a `text_lo` sub line `album · year · genre` (omit missing parts).
+- **Charter:** `CHARTED BY XXX` (the 7.3 charter style).
+- **Instruments & difficulty:** a section titled `Instruments` listing each charted instrument (from the `diff_*` fields that are ≥ 0, mapped to friendly names — Guitar, Bass, Drums, Keys, Vocals, Rhythm, Pro Lead/Bass (GHL)) with its **intensity** as a small 6-segment meter plus the number (intensity scale is roughly 0–6 but can exceed it — cap the meter fill at 6, still print the real number; `-1`/absent instruments are omitted). This is the richest, most detail-screen-only content.
+- **Feature badges:** the fuller set as chips (7.10 chip style): Video background, Pro drums, Modchart, Lyrics (`notesData.hasLyrics`), Vocals (`hasVocals`), Solo sections (`hasSoloSections`) — only those that are true.
+- **Length:** duration chip (`m:ss`), shown near the header.
+- **Primary action — Download:** a full-width `star` button (7.6 button treatment: glass sheen, cyan glow, `on_accent` label `Download`), pinned at the bottom. It carries the SAME download state machine as the row note button (idle → downloading progress → done ✓ → error/retry), so the user can download from here with full context. After success, show the scan hint (7.9).
+- Enter/exit: `dur_4` `ease_emphasized` (a shared-element feel — the tapped cover expands into the header if cheap; otherwise a clean fade+rise). Reduced-motion: fade only.
 
 ---
 
