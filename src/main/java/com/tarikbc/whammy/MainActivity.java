@@ -62,6 +62,9 @@ public class MainActivity extends Activity {
   private int currentPage;
   private boolean loadingMore;
   private boolean reachedEnd;
+  // Bumped on every brand-new search so an in-flight page from a previous
+  // query can't land and pollute the current results (stale-search race).
+  private int searchGeneration;
   /** Every raw chart fetched for the current query+instrument, BEFORE the
    *  client-side video filter — kept so toggling "Video" can recompute the
    *  visible list without re-hitting the network. */
@@ -257,6 +260,7 @@ public class MainActivity extends Activity {
   }
 
   private void startNewSearch(String query, String instrument) {
+    searchGeneration++;   // invalidate any in-flight page from a prior search
     currentQuery = query;
     currentInstrument = instrument;
     currentPage = 0;
@@ -308,20 +312,22 @@ public class MainActivity extends Activity {
     loadingMore = true;
     final String query = currentQuery;
     final String instrument = currentInstrument;
+    final int gen = searchGeneration;
     executor.execute(() -> {
       try {
         List<Chart> raw = EncoreApi.search(query, page, instrument);
-        mainHandler.post(() -> onPageLoaded(page, raw, chainDepth));
+        mainHandler.post(() -> onPageLoaded(gen, page, raw, chainDepth));
       } catch (IOException e) {
-        mainHandler.post(() -> onPageLoadFailure(page));
+        mainHandler.post(() -> onPageLoadFailure(gen, page));
       } catch (Exception e) {
         // Defensive: a malformed response, etc. — same user-facing outcome as IOException.
-        mainHandler.post(() -> onPageLoadFailure(page));
+        mainHandler.post(() -> onPageLoadFailure(gen, page));
       }
     });
   }
 
-  private void onPageLoadFailure(int page) {
+  private void onPageLoadFailure(int gen, int page) {
+    if (gen != searchGeneration) return;   // a newer search superseded this one
     loadingMore = false;
     if (page == 1 && loadedRaw.isEmpty()) {
       showFirstLaunchState();
@@ -341,7 +347,8 @@ public class MainActivity extends Activity {
    *  empty page reliably means "no more"). Non-empty raw pages are cached
    *  into {@link #loadedRaw}, then run through the client-side video
    *  filter before being shown/appended. */
-  private void onPageLoaded(int page, List<Chart> raw, int chainDepth) {
+  private void onPageLoaded(int gen, int page, List<Chart> raw, int chainDepth) {
+    if (gen != searchGeneration) return;   // a newer search superseded this one
     currentPage = page;
 
     if (raw.isEmpty()) {

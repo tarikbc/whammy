@@ -5,9 +5,10 @@ export ANDROID_HOME="${ANDROID_HOME:-/Users/tarikbc/Library/Android/sdk}"
 BT="$ANDROID_HOME/build-tools/35.0.0"; PLAT="$ANDROID_HOME/platforms/android-34/android.jar"
 PKG=com.tarikbc.whammy; OUT=build; rm -rf "$OUT"; mkdir -p "$OUT/gen" "$OUT/obj" "$OUT/apk"
 # 1. compile + link resources -> R.java + compiled resources
-find src/main/res -name '*.xml' -o -name '*.png' -o -name '*.ttf' | while read f; do
-  "$BT/aapt2" compile "$f" -o "$OUT/obj" >/dev/null; done 2>/dev/null || \
-  "$BT/aapt2" compile --dir src/main/res -o "$OUT/obj/res.zip"
+# Compile the whole res/ dir in one call so a bad resource (e.g. an illegal
+# '--' inside an XML comment) FAILS THE BUILD LOUDLY instead of being
+# silently dropped — a per-file loop with `2>/dev/null` used to hide these.
+"$BT/aapt2" compile --dir src/main/res -o "$OUT/obj/res.zip"
 
 # RecyclerView needs androidx.recyclerview.R (R.attr.recyclerViewStyle /
 # R.styleable.RecyclerView.* etc.) to exist and be loadable at runtime —

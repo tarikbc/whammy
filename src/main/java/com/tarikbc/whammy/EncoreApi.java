@@ -30,16 +30,22 @@ public class EncoreApi {
         c.setRequestProperty("Content-Type", "application/json");
         c.setRequestProperty("User-Agent", "Whammy/1.0");
         c.setDoOutput(true);
-        try (OutputStream os = c.getOutputStream()) {
-            os.write(buildSearchBody(query, page, 25, instrument).getBytes("UTF-8"));
+        try {
+            try (OutputStream os = c.getOutputStream()) {
+                os.write(buildSearchBody(query, page, 25, instrument).getBytes("UTF-8"));
+            }
+            int code = c.getResponseCode();
+            String body;
+            try (InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream()) {
+                body = readAll(in);
+            }
+            // Live api.enchor.us/search returns HTTP 201 (not 200) on success as of 2026-07-21
+            // (verified via curl -D-); accept any 2xx rather than exactly 200.
+            if (code < 200 || code >= 300) throw new IOException("search http " + code + ": " + body);
+            return parseSearchResults(body);
+        } finally {
+            c.disconnect();
         }
-        int code = c.getResponseCode();
-        InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
-        String body = readAll(in);
-        // Live api.enchor.us/search returns HTTP 201 (not 200) on success as of 2026-07-21
-        // (verified via curl -D-); accept any 2xx rather than exactly 200.
-        if (code < 200 || code >= 300) throw new IOException("search http " + code + ": " + body);
-        return parseSearchResults(body);
     }
 
     /**
@@ -68,18 +74,22 @@ public class EncoreApi {
         HttpURLConnection c = (HttpURLConnection) new URL(fileUrl(md5)).openConnection();
         c.setConnectTimeout(15000); c.setReadTimeout(60000);
         c.setRequestProperty("User-Agent", "Whammy/1.0");
-        int code = c.getResponseCode();
-        if (code != 200) throw new IOException("download http " + code);
-        int total = c.getContentLength();
-        File part = new File(dest.getPath() + ".part");
-        try (InputStream in = c.getInputStream(); OutputStream out = new FileOutputStream(part)) {
-            byte[] buf = new byte[8192]; int n; long got = 0;
-            while ((n = in.read(buf)) != -1) {
-                out.write(buf, 0, n); got += n;
-                if (cb != null) cb.onProgress(total > 0 ? (int)(got * 100 / total) : -1);
+        try {
+            int code = c.getResponseCode();
+            if (code != 200) throw new IOException("download http " + code);
+            int total = c.getContentLength();
+            File part = new File(dest.getPath() + ".part");
+            try (InputStream in = c.getInputStream(); OutputStream out = new FileOutputStream(part)) {
+                byte[] buf = new byte[8192]; int n; long got = 0;
+                while ((n = in.read(buf)) != -1) {
+                    out.write(buf, 0, n); got += n;
+                    if (cb != null) cb.onProgress(total > 0 ? (int)(got * 100 / total) : -1);
+                }
             }
+            if (!part.renameTo(dest)) { copy(part, dest); part.delete(); }
+        } finally {
+            c.disconnect();
         }
-        if (!part.renameTo(dest)) { copy(part, dest); part.delete(); }
     }
 
     private static String readAll(InputStream in) throws IOException {

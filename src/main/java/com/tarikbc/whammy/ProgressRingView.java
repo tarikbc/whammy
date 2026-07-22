@@ -84,11 +84,18 @@ public class ProgressRingView extends View {
     removeCallbacks(spinner);
   }
 
-  @Override protected void onDraw(Canvas cv) {
+  /** Built once per size change (not per frame — the 16ms indeterminate spin
+   *  would otherwise allocate a shader every tick). */
+  @Override protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+    super.onSizeChanged(w, h, oldw, oldh);
     float inset = arc.getStrokeWidth();
-    box.set(inset, inset, getWidth() - inset, getHeight() - inset);
+    box.set(inset, inset, w - inset, h - inset);
     arc.setShader(new SweepGradient(box.centerX(), box.centerY(),
         new int[]{0xFF35E6E1, 0xFF3B9DFF, 0xFF35E6E1}, null));
+  }
+
+  @Override protected void onDraw(Canvas cv) {
+    if (getWidth() == 0 || getHeight() == 0) return;
     if (trackVisible) cv.drawOval(box, track);
     if (percent < 0) {
       cv.drawArc(box, spin - 90, 90, false, arc);
