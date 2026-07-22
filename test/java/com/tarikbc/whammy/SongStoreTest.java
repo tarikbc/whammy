@@ -2,7 +2,7 @@ package com.tarikbc.whammy;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 class SongStoreTest {
-    private Chart c(String a,String n,String ch){ return new Chart("d".repeat(32),n,a,ch); }
+    private Chart c(String a,String n,String ch){ return new Chart("d".repeat(32),n,a,ch,null); }
     @Test void normal() { assertEquals("Dire Straits - Sultans of Swing (Harmonix).sng",
         SongStore.sanitizeFilename(c("Dire Straits","Sultans of Swing","Harmonix"))); }
     @Test void stripsIllegalChars() { assertEquals("ACDC - TNT (X).sng",

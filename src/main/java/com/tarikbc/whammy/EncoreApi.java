@@ -9,6 +9,8 @@ public class EncoreApi {
 
     public static final String SEARCH_URL = "https://api.enchor.us/search";
     public static String fileUrl(String md5) { return "https://files.enchor.us/" + md5 + ".sng"; }
+    // Callers must check albumArtMd5 != null before calling (field may be absent from search results).
+    public static String artUrl(String albumArtMd5) { return "https://files.enchor.us/" + albumArtMd5 + ".jpg"; }
 
     public static List<Chart> search(String query, int page) throws IOException {
         HttpURLConnection c = (HttpURLConnection) new URL(SEARCH_URL).openConnection();

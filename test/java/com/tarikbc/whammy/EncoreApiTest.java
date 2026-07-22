@@ -24,6 +24,19 @@ class EncoreApiTest {
         assertEquals("Dire Straits", c.artist);
         assertEquals("Harmonix", c.charter);
     }
+    @Test void chart_fromJson_readsAlbumArtMd5() {
+        JSONObject o = new JSONObject("{\"md5\":\""+"a".repeat(32)+"\",\"name\":\"Sultans of Swing\",\"artist\":\"Dire Straits\",\"charter\":\"Harmonix\",\"albumArtMd5\":\""+"e".repeat(32)+"\"}");
+        Chart c = Chart.fromJson(o);
+        assertEquals("e".repeat(32), c.albumArtMd5);
+    }
+    @Test void chart_fromJson_missingAlbumArtMd5IsNull() {
+        JSONObject o = new JSONObject("{\"md5\":\""+"a".repeat(32)+"\",\"name\":\"Sultans of Swing\",\"artist\":\"Dire Straits\",\"charter\":\"Harmonix\"}");
+        Chart c = Chart.fromJson(o);
+        assertNull(c.albumArtMd5);
+    }
+    @Test void artUrl_buildsCoverImageUrl() {
+        assertEquals("https://files.enchor.us/abc123.jpg", EncoreApi.artUrl("abc123"));
+    }
     @Test void chart_fromJson_nullOwnFieldsBecomeJavaNull() {
         JSONObject o = new JSONObject("{\"md5\":\""+"c".repeat(32)+"\",\"name\":null,\"artist\":null}");
         Chart c = Chart.fromJson(o);
