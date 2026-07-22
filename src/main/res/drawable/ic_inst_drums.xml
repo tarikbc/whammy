@@ -1,36 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Instrument badge: drums. DESIGN.md §7.7/§7.10: 24 grid, monochrome.
-  Bold FILLED silhouette: a solid barrel-shaped drum shell with a pair
-  of thick crossed drumsticks (with bead tips) angled over the top —
-  reads as percussion even at chip size, unlike thin-outline shells.
+  Instrument badge: drums. Sourced from Lucide (ISC license,
+  https://lucide.dev/icons/drum) — pathData preserved verbatim from the
+  upstream SVG (its <ellipse> converted to an equivalent arc pathData),
+  converted to a stroke-based vector drawable. android:tint recolors it
+  (base color is opaque white).
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-  <!-- Drum shell (barrel silhouette). -->
   <path
-      android:fillColor="#FFFFFFFF"
-      android:pathData="
-        M4.5,11.3
-        C4.5,10 7.9,9 12,9
-        C16.1,9 19.5,10 19.5,11.3
-        L19.5,18.3
-        C19.5,19.6 16.1,20.6 12,20.6
-        C7.9,20.6 4.5,19.6 4.5,18.3
-        Z" />
-  <!-- Crossed drumsticks with round bead tips. -->
-  <path
-      android:fillColor="#FFFFFFFF"
+      android:fillColor="#00000000"
       android:strokeColor="#FFFFFFFF"
       android:strokeWidth="2.3"
       android:strokeLineCap="round"
-      android:pathData="M6.3,2.3 L13.5,8.7 M17.7,2.3 L10.5,8.7" />
+      android:strokeLineJoin="round"
+      android:pathData="m2,2 8,8" />
   <path
-      android:fillColor="#FFFFFFFF"
-      android:pathData="
-        M6.3,2.3 m-1.35,0 a1.35,1.35 0,1,0 2.7,0 a1.35,1.35 0,1,0 -2.7,0 Z
-        M17.7,2.3 m-1.35,0 a1.35,1.35 0,1,0 2.7,0 a1.35,1.35 0,1,0 -2.7,0 Z" />
+      android:fillColor="#00000000"
+      android:strokeColor="#FFFFFFFF"
+      android:strokeWidth="2.3"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"
+      android:pathData="m22,2 -8,8" />
+  <path
+      android:fillColor="#00000000"
+      android:strokeColor="#FFFFFFFF"
+      android:strokeWidth="2.3"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"
+      android:pathData="M2,9 A10,5 0 1,0 22,9 A10,5 0 1,0 2,9 Z" />
+  <path
+      android:fillColor="#00000000"
+      android:strokeColor="#FFFFFFFF"
+      android:strokeWidth="2.3"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"
+      android:pathData="M7,13.4v7.9" />
+  <path
+      android:fillColor="#00000000"
+      android:strokeColor="#FFFFFFFF"
+      android:strokeWidth="2.3"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"
+      android:pathData="M12,14v8" />
+  <path
+      android:fillColor="#00000000"
+      android:strokeColor="#FFFFFFFF"
+      android:strokeWidth="2.3"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"
+      android:pathData="M17,13.4v7.9" />
+  <path
+      android:fillColor="#00000000"
+      android:strokeColor="#FFFFFFFF"
+      android:strokeWidth="2.3"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"
+      android:pathData="M2,9v8a10,5 0,0 0,20 0V9" />
 </vector>

@@ -1,36 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Instrument badge: bass. DESIGN.md §7.7/§7.10: 24 grid, monochrome.
-  Bold FILLED silhouette. Distinct from ic_inst_guitar via a blockier,
-  larger trapezoid body (no waist pinch), a longer near-vertical neck,
-  and a wide flat rectangular headstock with peg ticks — reads as a
-  bigger, straighter instrument than the guitar's rounder body/angled
-  neck at a glance.
+  Instrument badge: bass. No open-license icon set (Lucide, Font
+  Awesome, Phosphor, Tabler, Material Design Icons) ships a distinct
+  bass-guitar glyph, so this reuses Lucide's real "guitar" pathData
+  (ISC license, https://lucide.dev/icons/guitar) mirrored horizontally
+  via a group transform — same authentic linework as ic_inst_guitar,
+  flipped so the two badges read as a distinguishable pair rather than
+  identical icons.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-  <!-- Blocky, rounded-trapezoid body (wider/less waisted than the guitar's). -->
-  <path
-      android:fillColor="#FFFFFFFF"
-      android:pathData="
-        M6,12.5 L13,12.5
-        C13.9,12.5 14.6,13.1 14.8,14.5
-        L14.9,18.5
-        C14.9,20.4 13.5,21.8 11.6,21.8
-        L7.4,21.8
-        C5.5,21.8 4.1,20.4 4.1,18.5
-        L4.2,14.5
-        C4.4,13.1 5.1,12.5 6,12.5
-        Z" />
-  <!-- Diagonal neck: steeper and longer than the guitar's for a taller-instrument read. -->
-  <path
-      android:fillColor="#FFFFFFFF"
-      android:pathData="M8.34,12.42 L10.66,13.58 L15.66,3.58 L13.34,2.42 Z" />
-  <!-- Wide flat rectangular headstock (vs. the guitar's round knob). -->
-  <path
-      android:fillColor="#FFFFFFFF"
-      android:pathData="M11.8,1.4 L17.3,1.4 L17.3,4.6 L11.8,4.6 Z" />
+  <group
+      android:pivotX="12"
+      android:pivotY="12"
+      android:scaleX="-1">
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="m11.9,12.1 4.514,-4.514" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M20.1,2.3a1,1 0,0 0,-1.4 0l-1.114,1.114A2,2 0,0 0,17 4.828v1.344a2,2 0,0 1,-0.586 1.414A2,2 0,0 1,17.828 7h1.344a2,2 0,0 0,1.414 -0.586L21.7,5.3a1,1 0,0 0,0 -1.4z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="m6,16 2,2" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M8.23,9.85A3,3 0,0 1,11 8a5,5 0,0 1,5 5,3 3,0 0,1 -1.85,2.77l-0.92,0.38A2,2 0,0 0,12 18a4,4 0,0 1,-4 4,6 6,0 0,1 -6,-6 4,4 0,0 1,4 -4,2 2,0 0,0 1.85,-1.23z" />
+  </group>
 </vector>
