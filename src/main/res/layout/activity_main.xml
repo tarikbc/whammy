@@ -216,7 +216,7 @@
 
   <!-- RecyclerView is added into this container programmatically by
        MainActivity (not declared here as an XML tag) — see
-       ResultsAdapter / task-8-report.md for why. empty_state is a
+       ResultsAdapter / build.sh for why. empty_state is a
        sibling child stacked on top of it (DESIGN.md §7.5): MainActivity
        toggles between the two, swapping empty_state's headline/sub
        between the first-launch copy (default, below) and the

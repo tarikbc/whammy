@@ -14,7 +14,7 @@ gen/
 *.keystore
 keystore/
 
-# Vendored jars + AAR res/manifest for the manual build (see task-8-report.md
+# Vendored jars + AAR res/manifest for the manual build (see vendor-libs.sh
 # for the exact fetch/extract commands — libs/aar/<name>/{res,AndroidManifest.xml}
 # is what build.sh compiles+links to generate real androidx.* R classes)
 libs/

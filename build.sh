@@ -14,7 +14,7 @@ PKG=com.tarikbc.whammy; OUT=build; rm -rf "$OUT"; mkdir -p "$OUT/gen" "$OUT/obj"
 # R.styleable.RecyclerView.* etc.) to exist and be loadable at runtime —
 # its precompiled bytecode reads them unconditionally on every
 # construction, XML or programmatic (confirmed by disassembly; see
-# task-8-report.md). This build never merges AARs by default, so we
+# vendor-libs.sh). This build never merges AARs by default, so we
 # vendor just the res/ + AndroidManifest.xml of every AAR whose classes
 # actually reference their own R — found by grepping every vendored jar's
 # .class files for "/R$" (javap chokes on some Kotlin classes, so this
@@ -55,6 +55,14 @@ javac --release 17 -cp "$CP" -d "$OUT/classes" @"$OUT/srcs.txt"
 cd "$OUT/apk" && cp base.ap_ whammy.unsigned.apk && cd - >/dev/null
 ( cd "$OUT" && zip -uj apk/whammy.unsigned.apk classes.dex >/dev/null )
 "$BT/zipalign" -f 4 "$OUT/apk/whammy.unsigned.apk" "$OUT/whammy.apk"
+# Generate a throwaway debug keystore on first run (keystore/ is git-ignored,
+# so a fresh clone won't have one). This is a local debug signing key only.
+if [ ! -f keystore/whammy-debug.jks ]; then
+  mkdir -p keystore
+  keytool -genkeypair -keystore keystore/whammy-debug.jks -storepass whammy123 \
+    -keypass whammy123 -alias whammy -keyalg RSA -keysize 2048 -validity 10000 \
+    -dname "CN=Whammy Debug, O=Whammy" >/dev/null 2>&1
+fi
 "$BT/apksigner" sign --ks keystore/whammy-debug.jks --ks-pass pass:whammy123 \
   --key-pass pass:whammy123 "$OUT/whammy.apk"
 echo "built $OUT/whammy.apk"
