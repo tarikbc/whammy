@@ -51,9 +51,11 @@ public class LibraryAdapter extends RecyclerView.Adapter<LibraryAdapter.RowHolde
 
   private final List<SongStore.LibraryItem> items = new ArrayList<>();
   private final Set<java.io.File> confirming = new HashSet<>();
+  private final ArtLoader artLoader;
 
-  public LibraryAdapter(List<SongStore.LibraryItem> initial) {
+  public LibraryAdapter(List<SongStore.LibraryItem> initial, ArtLoader artLoader) {
     items.addAll(initial);
+    this.artLoader = artLoader;
   }
 
   /** Replaces the full list (LibraryActivity.onResume's refresh) and
@@ -79,6 +81,10 @@ public class LibraryAdapter extends RecyclerView.Adapter<LibraryAdapter.RowHolde
 
     h.title.setText(item.name);
     h.size.setText(formatBytes(item.sizeBytes));
+
+    // Local album art (chart folders carry an album.jpg/png); .sng or
+    // artless folders fall back to the placeholder inside loadLocal.
+    artLoader.loadLocal(h.art, item.albumArt);
 
     boolean isConfirming = confirming.contains(item.file);
     h.trashButton.setVisibility(isConfirming ? View.GONE : View.VISIBLE);

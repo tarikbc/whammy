@@ -75,6 +75,50 @@ public class ArtLoader {
     });
   }
 
+  /**
+   * Load a LOCAL album-art image file (e.g. a chart folder's album.jpg) into
+   * {@code target}. Same placeholder / cache / recycle-safety contract as
+   * {@link #load}. Null/unreadable file leaves the placeholder in place.
+   */
+  public void loadLocal(ImageView target, java.io.File artFile) {
+    String key = artFile == null ? null : "file:" + artFile.getAbsolutePath();
+    target.setTag(key);
+    target.setImageResource(R.drawable.art_placeholder);
+    if (artFile == null || !artFile.isFile()) return;
+
+    Bitmap cached = cache.get(key);
+    if (cached != null) { target.setImageBitmap(cached); return; }
+
+    executor.execute(() -> {
+      Bitmap bmp = decodeLocal(artFile);
+      if (bmp == null) return; // keep placeholder
+      cache.put(key, bmp);
+      main.post(() -> {
+        if (key.equals(target.getTag())) target.setImageBitmap(bmp);
+      });
+    });
+  }
+
+  /** Decodes a local image file downsampled to ~2x the target row size. */
+  private Bitmap decodeLocal(java.io.File f) {
+    try {
+      String path = f.getAbsolutePath();
+      BitmapFactory.Options bounds = new BitmapFactory.Options();
+      bounds.inJustDecodeBounds = true;
+      BitmapFactory.decodeFile(path, bounds);
+      if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null;
+      int wantPx = targetPx * 2;
+      int sample = 1;
+      int w = bounds.outWidth, h = bounds.outHeight;
+      while ((w / (sample * 2)) >= wantPx && (h / (sample * 2)) >= wantPx) sample *= 2;
+      BitmapFactory.Options opts = new BitmapFactory.Options();
+      opts.inSampleSize = sample;
+      return BitmapFactory.decodeFile(path, opts);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
   /** GETs the art JPEG and decodes it downsampled to ~2x the target row size. */
   private Bitmap fetch(String albumArtMd5) {
     try {

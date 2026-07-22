@@ -48,7 +48,7 @@ public class LibraryActivity extends Activity {
     emptyState = findViewById(R.id.empty_state);
     FrameLayout listContainer = findViewById(R.id.list_container);
 
-    adapter = new LibraryAdapter(Collections.emptyList());
+    adapter = new LibraryAdapter(Collections.emptyList(), new ArtLoader(this));
     adapter.onListChanged = this::updateHeader;
 
     rv = new RecyclerView(this);

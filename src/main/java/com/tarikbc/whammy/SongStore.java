@@ -46,13 +46,30 @@ public class SongStore {
         public final String name;
         public final long sizeBytes;
         public final boolean isDir;
+        /** Local album-art image inside a chart folder (album.png/jpg/jpeg), or null. */
+        public final java.io.File albumArt;
 
-        public LibraryItem(java.io.File file, String name, long sizeBytes, boolean isDir) {
+        public LibraryItem(java.io.File file, String name, long sizeBytes, boolean isDir, java.io.File albumArt) {
             this.file = file;
             this.name = name;
             this.sizeBytes = sizeBytes;
             this.isDir = isDir;
+            this.albumArt = albumArt;
         }
+    }
+
+    /** The album-art image in a chart folder: album.png/jpg/jpeg (case-insensitive), else null. */
+    public static java.io.File findAlbumArt(java.io.File chartDir) {
+        if (chartDir == null || !chartDir.isDirectory()) return null;
+        java.io.File[] kids = chartDir.listFiles();
+        if (kids == null) return null;
+        for (java.io.File k : kids) {
+            String n = k.getName().toLowerCase(java.util.Locale.ROOT);
+            if (k.isFile() && (n.equals("album.png") || n.equals("album.jpg") || n.equals("album.jpeg"))) {
+                return k;
+            }
+        }
+        return null;
     }
 
     /**
@@ -70,10 +87,11 @@ public class SongStore {
         if (files == null) return out;
         for (java.io.File f : files) {
             if (f.isDirectory()) {
-                out.add(new LibraryItem(f, f.getName(), dirSize(f), true));
+                out.add(new LibraryItem(f, f.getName(), dirSize(f), true, findAlbumArt(f)));
             } else if (f.isFile() && f.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".sng")) {
                 String n = f.getName();
-                out.add(new LibraryItem(f, n.substring(0, n.length() - 4), f.length(), false));
+                // .sng bundles art inside the SNGPKG container (not a loose file); no cheap cover yet.
+                out.add(new LibraryItem(f, n.substring(0, n.length() - 4), f.length(), false, null));
             }
         }
         out.sort((a, b) -> a.name.compareToIgnoreCase(b.name));

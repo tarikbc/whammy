@@ -63,6 +63,33 @@ class SongStoreTest {
         assertTrue(SongStore.list(new File("/no/such/whammy-dir-xyz")).isEmpty());
     }
 
+    @Test void folderItemsCarryTheirAlbumArt() throws IOException {
+        File dir = Files.createTempDirectory("whammy-lib-test").toFile();
+        try {
+            File withArt = new File(dir, "Has Art");
+            assertTrue(withArt.mkdir());
+            writeBytes(new File(withArt, "notes.chart"), 10);
+            File art = new File(withArt, "album.jpg");
+            writeBytes(art, 20);
+
+            File noArt = new File(dir, "No Art");
+            assertTrue(noArt.mkdir());
+            writeBytes(new File(noArt, "notes.chart"), 10);
+
+            List<SongStore.LibraryItem> items = SongStore.list(dir);
+            assertEquals(2, items.size());
+            assertEquals(art, items.get(0).albumArt);   // "Has Art" sorts first
+            assertNull(items.get(1).albumArt);           // "No Art"
+
+            // Case-insensitive detection, png/jpeg too.
+            assertEquals(art, SongStore.findAlbumArt(withArt));
+            assertNull(SongStore.findAlbumArt(noArt));
+            assertNull(SongStore.findAlbumArt(null));
+        } finally {
+            SongStore.delete(dir);
+        }
+    }
+
     @Test void dirSizeIsRecursive() throws IOException {
         File dir = Files.createTempDirectory("whammy-lib-test").toFile();
         try {
