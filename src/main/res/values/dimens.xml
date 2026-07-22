@@ -26,8 +26,12 @@
 
   <!-- Component sizes -->
   <dimen name="note_button_size">48dp</dimen>
-  <dimen name="lane_light_width">3dp</dimen>
-  <dimen name="lane_light_inset_v">14dp</dimen>
+  <dimen name="album_art_size">56dp</dimen>
   <dimen name="search_field_height">54dp</dimen>
   <dimen name="primary_button_height">54dp</dimen>
+  <dimen name="app_bar_height">56dp</dimen>
+
+  <!-- Badges (DESIGN.md §7.10) -->
+  <dimen name="badge_icon_size">14dp</dimen>
+  <dimen name="badge_gap">6dp</dimen>
 </resources>

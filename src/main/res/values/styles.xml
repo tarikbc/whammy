@@ -74,6 +74,14 @@
     <item name="android:includeFontPadding">false</item>
   </style>
 
+  <!-- Badge text (duration): Archivo Regular 11sp, text_lo, no tracking (DESIGN.md §7.10) -->
+  <style name="Text.Badge" parent="@android:style/TextAppearance">
+    <item name="android:fontFamily">@font/archivo_regular</item>
+    <item name="android:textSize">11sp</item>
+    <item name="android:textColor">@color/text_lo</item>
+    <item name="android:includeFontPadding">false</item>
+  </style>
+
   <!-- Download %: Archivo SemiBold (tabular figures) 13sp, +0.5% -->
   <style name="Text.DownloadPercent" parent="@android:style/TextAppearance">
     <item name="android:fontFamily">@font/archivo_semibold</item>

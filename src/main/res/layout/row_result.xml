@@ -1,27 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Result row (DESIGN.md §7.3): lane_light (3dp) . text column (title +
-  meta) . note button (48dp). Inflated per-item by ResultsAdapter via
-  a plain LayoutInflater call (no RecyclerView XML tag involved, so no
-  androidx attribute resolution happens here — see ResultsAdapter /
-  MainActivity for why RecyclerView itself is built programmatically).
+  Result row (DESIGN.md §7.3): album art (56dp) . text column (title +
+  one-line ellipsized meta) . note button (48dp). Inflated per-item by
+  ResultsAdapter via a plain LayoutInflater call (no RecyclerView XML tag
+  involved). The fret lane-light is gone: rows now lead with album art
+  as their identity; the fret rainbow lives on the app icon only
+  (DESIGN.md §1.1/§7.3).
+
+  Corner-box fix: bg_row is the ONLY background drawn on this root (the
+  square-cornered lane-light that used to sit alongside it is removed
+  entirely), and RowHolder additionally installs a ViewOutlineProvider
+  (r_lg radius) + clipToOutline(true) on the itemView itself, so nothing
+  — any current or future child — can paint past the rounded rect
+  regardless of how the platform resolves the layer-list's own outline.
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:minHeight="@dimen/row_min_height"
     android:background="@drawable/bg_row">
-
-  <!-- Lane-light: the row's identity color, tinted per position%5 at bind time -->
-  <View
-      android:id="@+id/lane_light"
-      android:layout_width="@dimen/lane_light_width"
-      android:layout_height="match_parent"
-      android:layout_gravity="start"
-      android:layout_marginStart="8dp"
-      android:layout_marginTop="@dimen/lane_light_inset_v"
-      android:layout_marginBottom="@dimen/lane_light_inset_v"
-      android:background="@drawable/lane_light" />
 
   <LinearLayout
       android:layout_width="match_parent"
@@ -34,10 +31,25 @@
       android:paddingTop="@dimen/row_padding_v"
       android:paddingBottom="@dimen/row_padding_v">
 
+    <!-- Album art: 56dp rounded thumbnail, the row's identity
+         (DESIGN.md §7.3). `src` is the placeholder tile until ArtLoader
+         swaps in the decoded cover; `background` is a persistent
+         edge_hair hairline that stays visible once a real cover loads.
+         Corners are clipped to r_sm via ViewOutlineProvider set on this
+         view in RowHolder (plain SDK, API 21+). -->
+    <ImageView
+        android:id="@+id/art"
+        android:layout_width="@dimen/album_art_size"
+        android:layout_height="@dimen/album_art_size"
+        android:scaleType="centerCrop"
+        android:src="@drawable/art_placeholder"
+        android:background="@drawable/art_hairline" />
+
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
+        android:layout_marginStart="@dimen/space_16"
         android:orientation="vertical">
 
       <TextView
@@ -46,40 +58,21 @@
           android:layout_width="match_parent"
           android:layout_height="wrap_content" />
 
-      <!-- Rest / done / downloading meta: artist · CHARTED BY XXX -->
-      <LinearLayout
-          android:id="@+id/meta_row"
+      <!-- Meta: artist + " · " + CHARTED BY XXX built as ONE
+           SpannableStringBuilder in ResultsAdapter so the whole line
+           ellipsizes as a single unit — a long artist name ellipsizes
+           the whole line; the charter tag never hard-clips or gets
+           squeezed to zero width. -->
+      <TextView
+          android:id="@+id/meta"
+          style="@style/Text.Artist"
           android:layout_width="match_parent"
           android:layout_height="wrap_content"
           android:layout_marginTop="@dimen/title_artist_gap"
-          android:orientation="horizontal"
-          android:gravity="center_vertical">
+          android:maxLines="1"
+          android:ellipsize="end" />
 
-        <TextView
-            android:id="@+id/artist"
-            style="@style/Text.Artist"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:maxLines="1"
-            android:ellipsize="end" />
-
-        <TextView
-            style="@style/Text.Artist"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=" · " />
-
-        <TextView
-            android:id="@+id/charter"
-            style="@style/Text.Charter"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:maxLines="1"
-            android:ellipsize="end" />
-      </LinearLayout>
-
-      <!-- Error meta: replaces meta_row per DESIGN.md §7.4 / mockup -->
+      <!-- Error meta: replaces meta per DESIGN.md §7.4 / mockup -->
       <TextView
           android:id="@+id/error_text"
           style="@style/Text.Charter"
@@ -89,13 +82,33 @@
           android:textColor="@color/fret_red"
           android:text="@string/download_failed"
           android:visibility="gone" />
+
+      <!-- Badges (DESIGN.md §7.10): a third line under meta — instrument
+           icons, video, duration, PRO/MOD tags. Populated entirely by
+           ResultsAdapter (children added/removed per bind, never
+           reused across rows) since which badges appear varies per
+           chart; only present/true attributes render, no empty slots.
+           Hidden entirely (gone) on ERROR rows, where error_text takes
+           the line instead. android:clipChildren="true" (the default)
+           on this ViewGroup means, on a narrow row, badges that don't
+           fit the text column's width are simply clipped rather than
+           wrapping to a second line. -->
+      <LinearLayout
+          android:id="@+id/badges"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="@dimen/space_4"
+          android:orientation="horizontal"
+          android:gravity="center_vertical"
+          android:visibility="gone" />
     </LinearLayout>
 
     <!-- Note button: 48dp FrameLayout container. ResultsAdapter swaps its
          background (note_ring / note_done / note_error) and the icon per
-         DownloadState. Task 9: ProgressRingView is added as a further
-         child of this same FrameLayout to render DOWNLOADING — no
-         restructuring needed. -->
+         DownloadState — neutral `star` idle/downloading, `fret_green`
+         done, `fret_red` error; no per-row fret tinting. Task 9:
+         ProgressRingView is added as a further child of this same
+         FrameLayout to render DOWNLOADING — no restructuring needed. -->
     <FrameLayout
         android:id="@+id/note_button"
         android:layout_width="@dimen/note_button_size"

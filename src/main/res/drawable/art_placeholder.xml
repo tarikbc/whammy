@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Album-art placeholder (DESIGN.md §7.3): a `surface_hi` r_sm rounded
+  tile with an `edge_hair` outline and a small centered `text_lo` glyph
+  (ic_scan's paths, re-tinted inline since layer-list items don't carry
+  runtime tint). Shown while art is loading and for missing/failed art —
+  never an empty or broken-image box.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <!-- 1. Base fill -->
+  <item>
+    <shape android:shape="rectangle">
+      <corners android:radius="@dimen/r_sm" />
+      <solid android:color="@color/surface_hi" />
+    </shape>
+  </item>
+
+  <!-- 2. Hairline outline -->
+  <item>
+    <shape android:shape="rectangle">
+      <corners android:radius="@dimen/r_sm" />
+      <stroke android:width="1dp" android:color="@color/edge_hair" />
+      <solid android:color="@android:color/transparent" />
+    </shape>
+  </item>
+
+  <!-- 3. Centered glyph, text_lo -->
+  <item android:gravity="center" android:width="22dp" android:height="22dp">
+    <vector android:width="24dp" android:height="24dp"
+        android:viewportWidth="24" android:viewportHeight="24">
+      <path
+          android:pathData="M20,11.5 A8,8 0 1,0 6,17.5"
+          android:strokeColor="@color/text_lo"
+          android:strokeWidth="2"
+          android:strokeLineCap="round"
+          android:strokeLineJoin="round"
+          android:fillColor="#00000000" />
+      <path
+          android:pathData="M20,5 L20,11 L14,11"
+          android:strokeColor="@color/text_lo"
+          android:strokeWidth="2"
+          android:strokeLineCap="round"
+          android:strokeLineJoin="round"
+          android:fillColor="#00000000" />
+    </vector>
+  </item>
+
+</layer-list>

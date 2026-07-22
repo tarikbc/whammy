@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Note button — IDLE rest state (DESIGN.md §7.4): hollow 2dp ring in the
-  row's fret color. Base stroke color is a neutral placeholder; the
-  adapter applies `setBackgroundTintList` per row using `fret_*` by
-  `position % 5`. Also reused (untinted swap of the same shape, tinted
-  to the row's fret color) as the Task 8 DOWNLOADING placeholder — see
-  ResultsAdapter (Task 9 replaces that placeholder with a
-  ProgressRingView sweep arc).
+  Note button — IDLE / DOWNLOADING-placeholder state (DESIGN.md §7.4):
+  hollow 2dp ring in the neutral `star` action accent — no per-row fret
+  tinting (rows now lead with album art instead; fret colors are
+  icon-only, DESIGN.md §1.1). Reused as-is for the DOWNLOADING
+  placeholder (Task 9's ProgressRingView owns the actual cyan->blue
+  sweep-arc visual, added as a further child of the note_button
+  FrameLayout without any restructuring here).
 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
-  <stroke android:width="2dp" android:color="@color/text_lo" />
+  <stroke android:width="2dp" android:color="@color/star" />
   <solid android:color="@android:color/transparent" />
 </shape>

@@ -3,5 +3,13 @@
   <!-- Result row (DESIGN.md §7.3/§7.4) -->
   <string name="charted_by_fmt">Charted by %1$s</string>
   <string name="download_failed">Download failed · tap to retry</string>
+  <!-- Search field (DESIGN.md §7.2) -->
+  <string name="search_hint">Search songs or artists</string>
+  <!-- Badges (DESIGN.md §7.10) -->
+  <string name="badge_pro">PRO</string>
+  <string name="badge_mod">MOD</string>
+  <!-- App bar (DESIGN.md §7.1b) -->
+  <string name="library_button_desc">Library</string>
+  <string name="library_coming_soon">Library coming soon</string>
 </resources>
 
