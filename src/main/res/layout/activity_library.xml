@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Library screen (DESIGN.md §7.12): back affordance, "Your library"
+  header + "N charts · X MB" count sub, then a list of downloaded
+  charts. The RecyclerView is added programmatically by LibraryActivity
+  into list_container — never declared as an XML tag here. This app
+  never inflates a RecyclerView from XML (see MainActivity's onCreate
+  comment for the AAR-R-class reason build.sh works around); this
+  screen follows the exact same results_container pattern.
+
+  empty_state is a sibling FrameLayout child stacked on top of
+  list_container, shown instead of the (empty) RecyclerView when
+  SongStore.list() comes back empty (mirrors the search empty state,
+  DESIGN.md §7.5/§7.12). A persistent scan-hint footer (§7.9) sits
+  below the list, outside the scrolling area.
+
+  The activity's theme (Theme.Whammy) already supplies the layered
+  stage background via android:windowBackground, so this root paints
+  nothing of its own (same as activity_song_detail.xml's root).
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+  <!-- Back affordance (DESIGN.md §7.12: "a back affordance returning to
+       Search"). Same ic_clear + selectableItemBackgroundBorderless
+       pattern as SongDetailActivity's back_button. -->
+  <!-- TODO promote "Back" to strings.xml (also used verbatim by SongDetailActivity's back_button, outside this task's file scope) -->
+  <ImageView
+      android:id="@+id/back_button"
+      android:layout_width="40dp"
+      android:layout_height="40dp"
+      android:layout_marginStart="12dp"
+      android:layout_marginTop="@dimen/space_8"
+      android:padding="9dp"
+      android:src="@drawable/ic_clear"
+      android:tint="@color/text_lo"
+      android:background="?android:attr/selectableItemBackgroundBorderless"
+      android:clickable="true"
+      android:focusable="true"
+      android:contentDescription="Back" />
+
+  <!-- Header (DESIGN.md §7.12): "Your library" 22sp Archivo Expanded
+       SemiBold text_hi. No matching styles.xml entry exists at this
+       exact size (values/ belongs to another agent), so set inline —
+       same convention activity_song_detail.xml uses for its
+       song_title/song_artist/song_sub. -->
+  <!-- TODO promote to styles.xml (Text.LibraryHeader) and "Your library" to strings.xml -->
+  <TextView
+      android:id="@+id/header_title"
+      android:fontFamily="@font/archivo_expanded_semibold"
+      android:textSize="22sp"
+      android:textColor="@color/text_hi"
+      android:letterSpacing="-0.01"
+      android:includeFontPadding="false"
+      android:layout_marginStart="@dimen/screen_padding_h"
+      android:layout_marginEnd="@dimen/screen_padding_h"
+      android:layout_marginTop="@dimen/space_8"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="Your library" />
+
+  <!-- Count sub: "N charts · X MB" (DESIGN.md §7.12), filled in by
+       LibraryActivity from SongStore.list(). -->
+  <!-- TODO promote to styles.xml (Text.LibraryCount) -->
+  <TextView
+      android:id="@+id/count_text"
+      android:fontFamily="@font/archivo_regular"
+      android:textSize="14sp"
+      android:textColor="@color/text_lo"
+      android:includeFontPadding="false"
+      android:layout_marginStart="@dimen/screen_padding_h"
+      android:layout_marginEnd="@dimen/screen_padding_h"
+      android:layout_marginTop="@dimen/space_4"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content" />
+
+  <FrameLayout
+      android:id="@+id/list_container"
+      android:layout_width="match_parent"
+      android:layout_height="0dp"
+      android:layout_marginTop="@dimen/space_16"
+      android:layout_weight="1">
+
+    <!-- Empty state (DESIGN.md §7.12: "mirrors the search empty state",
+         §7.5). No w-dive/brand-mark drawable exists yet anywhere in
+         this codebase, so per the task's "reuse if present, else skip"
+         guidance this is headline + sub only, reusing the existing
+         Text.HeroHeadline / Text.Body styles §7.5 already specifies. -->
+    <LinearLayout
+        android:id="@+id/empty_state"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingStart="@dimen/screen_padding_h"
+        android:paddingEnd="@dimen/screen_padding_h"
+        android:visibility="gone">
+
+      <!-- TODO promote "No charts yet" to strings.xml -->
+      <TextView
+          style="@style/Text.HeroHeadline"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:gravity="center"
+          android:text="No charts yet" />
+
+      <!-- TODO promote "Songs you download land here." to strings.xml -->
+      <TextView
+          style="@style/Text.Body"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="@dimen/space_8"
+          android:gravity="center"
+          android:text="Songs you download land here." />
+    </LinearLayout>
+  </FrameLayout>
+
+  <!-- Scan-hint footer (DESIGN.md §7.9/§7.12): a slim persistent bar
+       below the list (not scrolling with it). No dedicated footer
+       background drawable exists to reuse (row/search/snackbar
+       backgrounds are all differently shaped for their own components),
+       so a plain 1dp edge_hair rule stands in as the divider, letting
+       the stage background show through — matching the "slim" spirit
+       without inventing new chrome. -->
+  <View
+      android:layout_width="match_parent"
+      android:layout_height="1dp"
+      android:background="@color/edge_hair" />
+
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      android:gravity="center_vertical"
+      android:paddingStart="@dimen/screen_padding_h"
+      android:paddingEnd="@dimen/screen_padding_h"
+      android:paddingTop="@dimen/space_12"
+      android:paddingBottom="@dimen/space_12">
+
+    <ImageView
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:src="@drawable/ic_scan"
+        android:tint="@color/star" />
+
+    <!-- "Scan" emphasized text_hi, rest text_lo (DESIGN.md §7.9) — the
+         emphasis span is applied in LibraryActivity#bindScanHint(). -->
+    <!-- TODO promote "Scan your library in Clone Hero to see new charts." to strings.xml -->
+    <TextView
+        android:id="@+id/scan_hint_text"
+        android:fontFamily="@font/archivo_regular"
+        android:textSize="12sp"
+        android:textColor="@color/text_lo"
+        android:includeFontPadding="false"
+        android:layout_marginStart="@dimen/space_8"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1" />
+  </LinearLayout>
+
+</LinearLayout>

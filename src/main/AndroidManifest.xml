@@ -17,5 +17,9 @@
             android:name=".SongDetailActivity"
             android:exported="false"
             android:theme="@style/Theme.Whammy" />
+        <activity
+            android:name=".LibraryActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Whammy" />
     </application>
 </manifest>

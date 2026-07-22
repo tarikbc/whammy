@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Library row (DESIGN.md §7.12): echoes the §7.3 album-row rhythm —
+  56dp art placeholder tile (local charts have no cover to fetch), title
+  (the chart file/folder name, Text.Title), a text_lo size line — with
+  a trailing delete control instead of the download note button.
+
+  Non-blocking delete confirm: tapping trash_button swaps it for the
+  inline confirm_actions pair (Cancel / Delete) rather than a system
+  dialog (DESIGN.md §7.12). LibraryAdapter toggles which is visible per
+  row keyed by the row's File (not adapter position — positions shift
+  as rows are deleted out from under a confirming row).
+
+  Inflated per-item by LibraryAdapter via a plain LayoutInflater call
+  (no RecyclerView XML tag involved), same as row_result.xml.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/row_min_height"
+    android:background="@drawable/bg_row">
+
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:minHeight="@dimen/row_min_height"
+      android:orientation="horizontal"
+      android:gravity="center_vertical"
+      android:paddingStart="@dimen/row_padding_h"
+      android:paddingEnd="@dimen/row_padding_h"
+      android:paddingTop="@dimen/row_padding_v"
+      android:paddingBottom="@dimen/row_padding_v">
+
+    <!-- Local charts have no cover to fetch (DESIGN.md §7.12) — always
+         the art placeholder tile, no ArtLoader call. -->
+    <ImageView
+        android:id="@+id/art"
+        android:layout_width="@dimen/album_art_size"
+        android:layout_height="@dimen/album_art_size"
+        android:scaleType="centerCrop"
+        android:src="@drawable/art_placeholder"
+        android:background="@drawable/art_hairline" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="@dimen/space_16"
+        android:orientation="vertical">
+
+      <!-- Title = the chart folder/file name (DESIGN.md §7.12). -->
+      <TextView
+          android:id="@+id/title"
+          style="@style/Text.Title"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content" />
+
+      <!-- Meta = size (DESIGN.md §7.12), reusing Text.Artist's face/size
+           but text_lo (not the default text) since this is a quieter
+           secondary line than a result row's artist name. -->
+      <TextView
+          android:id="@+id/size"
+          style="@style/Text.Artist"
+          android:textColor="@color/text_lo"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="@dimen/title_artist_gap"
+          android:maxLines="1"
+          android:ellipsize="end" />
+    </LinearLayout>
+
+    <!-- Trailing control: trash glyph <-> inline Cancel/Delete confirm. -->
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_12">
+
+      <!-- TODO promote "Delete chart" to strings.xml -->
+      <ImageView
+          android:id="@+id/trash_button"
+          android:layout_width="40dp"
+          android:layout_height="40dp"
+          android:padding="9dp"
+          android:src="@drawable/ic_trash"
+          android:tint="@color/text_lo"
+          android:background="?android:attr/selectableItemBackgroundBorderless"
+          android:clickable="true"
+          android:focusable="true"
+          android:contentDescription="Delete chart" />
+
+      <LinearLayout
+          android:id="@+id/confirm_actions"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:orientation="horizontal"
+          android:gravity="center_vertical"
+          android:visibility="gone">
+
+        <!-- TODO promote "Cancel" to strings.xml -->
+        <TextView
+            android:id="@+id/confirm_cancel"
+            style="@style/Text.Charter"
+            android:textColor="@color/text_lo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="6dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="Cancel" />
+
+        <!-- TODO promote "Delete" to strings.xml -->
+        <TextView
+            android:id="@+id/confirm_delete"
+            style="@style/Text.Charter"
+            android:textColor="@color/fret_red"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_12"
+            android:padding="6dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="Delete" />
+      </LinearLayout>
+    </FrameLayout>
+  </LinearLayout>
+</FrameLayout>

@@ -10,7 +10,6 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.Toast;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
@@ -121,13 +120,11 @@ public class MainActivity extends Activity {
     clear.setOnClickListener(v -> input.setText(""));
   }
 
-  /** Wires the app-bar library glyph (DESIGN.md §7.1b). */
+  /** Wires the app-bar library glyph (DESIGN.md §7.1b) to open the
+   *  Library screen (DESIGN.md §7.12). */
   private void setUpLibraryButton() {
     ImageView library = findViewById(R.id.library_button);
-    library.setOnClickListener(v -> {
-      // R4: open Library screen.
-      Toast.makeText(this, R.string.library_coming_soon, Toast.LENGTH_SHORT).show();
-    });
+    library.setOnClickListener(v -> startActivity(new Intent(this, LibraryActivity.class)));
   }
 
   private int dp(int v) {
