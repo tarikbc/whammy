@@ -2,7 +2,7 @@
 set -euo pipefail
 [ -e libs/recyclerview-1.3.2.jar ] || { echo "libs/ not vendored — run ./vendor-libs.sh first" >&2; exit 1; }
 export ANDROID_HOME="${ANDROID_HOME:-/Users/tarikbc/Library/Android/sdk}"
-BT="$ANDROID_HOME/build-tools/34.0.0"; PLAT="$ANDROID_HOME/platforms/android-34/android.jar"
+BT="$ANDROID_HOME/build-tools/35.0.0"; PLAT="$ANDROID_HOME/platforms/android-34/android.jar"
 PKG=com.tarikbc.whammy; OUT=build; rm -rf "$OUT"; mkdir -p "$OUT/gen" "$OUT/obj" "$OUT/apk"
 # 1. compile + link resources -> R.java + compiled resources
 find src/main/res -name '*.xml' -o -name '*.png' -o -name '*.ttf' | while read f; do
