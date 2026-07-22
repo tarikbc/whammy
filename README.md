@@ -8,6 +8,9 @@
 
 A native Android app with a flagship, Guitar-Hero-inspired design system.
 
+[![build](https://github.com/tarikbc/whammy/actions/workflows/build.yml/badge.svg)](https://github.com/tarikbc/whammy/actions/workflows/build.yml)
+&nbsp;**[⬇ Download the latest APK](https://github.com/tarikbc/whammy/releases/latest)**
+
 </div>
 
 ---
