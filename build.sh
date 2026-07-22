@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+[ -e libs/recyclerview-1.3.2.jar ] || { echo "libs/ not vendored — run ./vendor-libs.sh first" >&2; exit 1; }
 export ANDROID_HOME="${ANDROID_HOME:-/Users/tarikbc/Library/Android/sdk}"
 BT="$ANDROID_HOME/build-tools/34.0.0"; PLAT="$ANDROID_HOME/platforms/android-34/android.jar"
 PKG=com.tarikbc.whammy; OUT=build; rm -rf "$OUT"; mkdir -p "$OUT/gen" "$OUT/obj" "$OUT/apk"
