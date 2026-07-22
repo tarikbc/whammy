@@ -35,6 +35,28 @@ jobs:
       - name: Unit tests
         run: ./test.sh
 
+      - name: Decode release signing key (tags only)
+        if: github.ref_type == 'tag'
+        env:
+          KS_B64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          STOREPASS: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          KEYPASS: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          KEYALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            mkdir -p keystore
+            printf '%s' "$KS_B64" | base64 -d > keystore/whammy-release.jks
+            {
+              echo "KEYSTORE=keystore/whammy-release.jks"
+              echo "STOREPASS=$STOREPASS"
+              echo "KEYPASS=$KEYPASS"
+              echo "KEYALIAS=$KEYALIAS"
+            } >> "$GITHUB_ENV"
+            echo "Release key configured — publishing a release-signed APK."
+          else
+            echo "::warning::No RELEASE_KEYSTORE_BASE64 secret set; this release will be debug-signed."
+          fi
+
       - name: Build APK
         env:
           VERSION_NAME: ${{ github.ref_type == 'tag' && github.ref_name || 'dev' }}

@@ -56,14 +56,20 @@ javac --release 17 -cp "$CP" -d "$OUT/classes" @"$OUT/srcs.txt"
 cd "$OUT/apk" && cp base.ap_ whammy.unsigned.apk && cd - >/dev/null
 ( cd "$OUT" && zip -uj apk/whammy.unsigned.apk classes.dex >/dev/null )
 "$BT/zipalign" -f 4 "$OUT/apk/whammy.unsigned.apk" "$OUT/whammy.apk"
-# Generate a throwaway debug keystore on first run (keystore/ is git-ignored,
-# so a fresh clone won't have one). This is a local debug signing key only.
-if [ ! -f keystore/whammy-debug.jks ]; then
+# Signing. Defaults to a local throwaway DEBUG key (auto-generated on first
+# run since keystore/ is git-ignored). CI overrides these env vars with a real
+# RELEASE key from GitHub Secrets on tag builds, so published releases are
+# stably signed (updates install over each other).
+KEYSTORE="${KEYSTORE:-keystore/whammy-debug.jks}"
+STOREPASS="${STOREPASS:-whammy123}"
+KEYPASS="${KEYPASS:-whammy123}"
+KEYALIAS="${KEYALIAS:-whammy}"
+if [ "$KEYSTORE" = "keystore/whammy-debug.jks" ] && [ ! -f "$KEYSTORE" ]; then
   mkdir -p keystore
-  keytool -genkeypair -keystore keystore/whammy-debug.jks -storepass whammy123 \
-    -keypass whammy123 -alias whammy -keyalg RSA -keysize 2048 -validity 10000 \
+  keytool -genkeypair -keystore "$KEYSTORE" -storepass "$STOREPASS" \
+    -keypass "$KEYPASS" -alias "$KEYALIAS" -keyalg RSA -keysize 2048 -validity 10000 \
     -dname "CN=Whammy Debug, O=Whammy" >/dev/null 2>&1
 fi
-"$BT/apksigner" sign --ks keystore/whammy-debug.jks --ks-pass pass:whammy123 \
-  --key-pass pass:whammy123 "$OUT/whammy.apk"
+"$BT/apksigner" sign --ks "$KEYSTORE" --ks-pass "pass:$STOREPASS" \
+  --key-pass "pass:$KEYPASS" --ks-key-alias "$KEYALIAS" "$OUT/whammy.apk"
 echo "built $OUT/whammy.apk"
