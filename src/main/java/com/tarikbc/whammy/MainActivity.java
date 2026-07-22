@@ -11,7 +11,9 @@ import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.PathInterpolator;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -111,6 +113,31 @@ public class MainActivity extends Activity {
   private TextView videoChip;
   private TextView sortChip;
 
+  // --- Multi-select batch download (task B2) ---
+  private View selectionBar;
+  private TextView selectionCount;
+  private TextView selectionSelectAll;
+  private TextView selectionDownload;
+  /** The ordered list of positions the current batch is working through
+   *  (null when no batch is running -- also doubles as the "is a batch in
+   *  flight" flag). */
+  private List<Integer> batchQueue;
+  private int batchIndex;
+  private int batchOk;
+  private int batchFail;
+  /** The adapter the running batch belongs to. Every batch callback
+   *  re-checks {@code adapter == batchAdapter} before touching UI so a
+   *  batch started against an adapter that's since been replaced (a brand
+   *  new search) can't reach into the new adapter's rows. */
+  private ResultsAdapter batchAdapter;
+  /** Set by the Cancel/back-button exit path; checked before enqueueing
+   *  each further item so a queue stops advancing once the user leaves
+   *  selection mode mid-run (task B2 lifecycle: the in-flight item is
+   *  simply let finish -- its own onDone/onError still updates that row's
+   *  state -- but nothing further starts and no completion Snackbar
+   *  fires for an aborted run). */
+  private boolean batchCancelled;
+
   @Override protected void onCreate(Bundle s) {
     super.onCreate(s);
     setContentView(R.layout.activity_main);
@@ -174,6 +201,7 @@ public class MainActivity extends Activity {
 
     setUpSearchField();
     setUpFilterRail();
+    setUpSelectionBar();
 
     // First-launch state (DESIGN.md §7.5): shown until the first search
     // resolves. activity_main.xml's empty_state already carries this
@@ -341,6 +369,175 @@ public class MainActivity extends Activity {
     anim.start();
   }
 
+  /** Inflates the bottom batch action bar (task B2, DESIGN.md §7.8
+   *  surface language) into the activity's own content FrameLayout --
+   *  same host + technique {@link Snackbar} uses for its own card, so no
+   *  activity_main.xml changes are needed to position it. Starts GONE;
+   *  {@link #updateSelectionBar} drives visibility/content from
+   *  {@link ResultsAdapter#onSelectionChanged} for whichever adapter is
+   *  current. */
+  private void setUpSelectionBar() {
+    ViewGroup content = findViewById(android.R.id.content);
+    selectionBar = LayoutInflater.from(this).inflate(R.layout.view_selection_bar, content, false);
+    selectionBar.setVisibility(View.GONE);
+    content.addView(selectionBar);
+
+    ImageView cancel = selectionBar.findViewById(R.id.selection_cancel);
+    selectionCount = selectionBar.findViewById(R.id.selection_count);
+    selectionSelectAll = selectionBar.findViewById(R.id.selection_select_all);
+    selectionDownload = selectionBar.findViewById(R.id.selection_download);
+
+    cancel.setOnClickListener(v -> exitSelectionMode());
+    selectionSelectAll.setOnClickListener(v -> {
+      if (adapter != null) adapter.selectAll();
+    });
+    selectionDownload.setOnClickListener(v -> startBatchDownload());
+  }
+
+  /** Reflects the current adapter's selection state onto the bar --
+   *  wired as every adapter's {@link ResultsAdapter#onSelectionChanged}
+   *  in {@link #loadResults}. Re-enables Select all/Download on every
+   *  call (a fresh selection-mode entry, or any further toggle) since the
+   *  only thing that ever disables them is a batch actually running, and
+   *  no further selection-changed events fire while one is (the queue
+   *  drives row state via {@link ResultsAdapter#setState}, not the
+   *  selection set). */
+  private void updateSelectionBar(boolean selectionMode, int count) {
+    if (selectionBar == null) return;
+    selectionBar.setVisibility(selectionMode ? View.VISIBLE : View.GONE);
+    if (!selectionMode) return;
+    selectionCount.setText(getString(R.string.selection_count_fmt, count));
+    selectionDownload.setText(getString(R.string.download_n_fmt, count));
+    selectionSelectAll.setEnabled(true);
+    selectionDownload.setEnabled(count > 0);
+    selectionDownload.setAlpha(count > 0 ? 1f : 0.45f);
+  }
+
+  /** Cancel/✕ and the system back button (DESIGN.md task B2) both funnel
+   *  here: aborts any in-flight batch from enqueueing further items (the
+   *  one item already downloading is simply let finish -- see
+   *  {@link #batchCancelled}'s doc) and clears/hides the selection UI via
+   *  the current adapter. No-op if there's no current adapter. */
+  private void exitSelectionMode() {
+    batchCancelled = true;
+    if (adapter != null) adapter.exitSelectionMode();
+  }
+
+  @Override public void onBackPressed() {
+    if (adapter != null && adapter.isSelectionMode()) {
+      exitSelectionMode();
+      return;
+    }
+    super.onBackPressed();
+  }
+
+  /** `Download (N)` tap (task B2): permission-gates exactly like a single
+   *  row's download (DESIGN.md §7.6 -- never silently no-op a missing
+   *  grant), then drives every selected row through {@link DownloadHelper}
+   *  ONE AT A TIME via {@link #runNextBatchItem} rather than firing N
+   *  parallel connections. Deliberately skips the single-tap duplicate-
+   *  download confirm ({@link #startDownload}) -- already-in-library
+   *  selections are just re-downloaded, per spec. */
+  private void startBatchDownload() {
+    if (adapter == null || !adapter.isSelectionMode()) return;
+    List<Integer> positions = adapter.getSelectedPositionsSorted();
+    if (positions.isEmpty()) return;
+
+    if (!Permissions.hasAllFiles()) {
+      startActivity(new Intent(this, PermissionActivity.class));
+      return;
+    }
+
+    batchQueue = positions;
+    batchIndex = 0;
+    batchOk = 0;
+    batchFail = 0;
+    batchAdapter = adapter;
+    batchCancelled = false;
+
+    // Prevent a second overlapping queue from a stray double-tap; Cancel
+    // stays live throughout (it just flips batchCancelled).
+    selectionSelectAll.setEnabled(false);
+    selectionDownload.setEnabled(false);
+    selectionDownload.setAlpha(0.45f);
+
+    runNextBatchItem();
+  }
+
+  /** Sequential queue driver (task B2 "Constraints": reuse DownloadHelper
+   *  per item, a small sequential driver here rather than rewriting the
+   *  download internals). Each item runs to completion (onDone/onError)
+   *  before the next one starts -- that chaining, not any explicit
+   *  concurrency limit, is what keeps this to one connection at a time.
+   *  Bails (without touching adapter rows) if the activity has been
+   *  destroyed, the batch was cancelled, or {@link #adapter} no longer
+   *  matches {@link #batchAdapter} (a new search replaced it out from
+   *  under a running batch). */
+  private void runNextBatchItem() {
+    if (isFinishing() || isDestroyed() || batchCancelled || adapter != batchAdapter) {
+      finishBatchQuietly();
+      return;
+    }
+    if (batchIndex >= batchQueue.size()) {
+      onBatchComplete();
+      return;
+    }
+
+    final int pos = batchQueue.get(batchIndex);
+    final ResultsAdapter forAdapter = batchAdapter;
+    Chart chart = forAdapter.chartAt(pos);
+
+    forAdapter.setState(pos, ResultsAdapter.DownloadState.DOWNLOADING, -1);
+    DownloadHelper.start(this, chart, new DownloadHelper.Callback() {
+      @Override public void onProgress(int percent) {
+        if (adapter == forAdapter) forAdapter.setState(pos, ResultsAdapter.DownloadState.DOWNLOADING, percent);
+      }
+      @Override public void onDone(File placed) {
+        if (adapter == forAdapter) forAdapter.setState(pos, ResultsAdapter.DownloadState.DONE, 100);
+        if (batchCancelled) { finishBatchQuietly(); return; }
+        batchOk++;
+        batchIndex++;
+        runNextBatchItem();
+      }
+      @Override public void onError(Exception e) {
+        if (adapter == forAdapter) forAdapter.setState(pos, ResultsAdapter.DownloadState.ERROR, 0);
+        if (batchCancelled) { finishBatchQuietly(); return; }
+        batchFail++;
+        batchIndex++;
+        runNextBatchItem();
+      }
+    });
+  }
+
+  /** Every selected chart has been attempted: refreshes the "already
+   *  downloaded" cross-ref, exits selection mode (hiding the batch bar),
+   *  THEN shows the summary Snackbar -- that ordering is what keeps the
+   *  bar and the Snackbar from ever visually overlapping (view_
+   *  selection_bar.xml's elevation is also higher than the Snackbar's own
+   *  as a belt-and-suspenders backstop). */
+  private void onBatchComplete() {
+    int ok = batchOk, fail = batchFail;
+    finishBatchQuietly();
+    if (adapter != null) adapter.exitSelectionMode();
+    if (isFinishing() || isDestroyed()) return;
+    String msg = fail == 0
+        ? getString(R.string.batch_added_fmt, ok) + " · " + getString(R.string.scan_hint)
+        : getString(R.string.batch_added_failed_fmt, ok, fail);
+    Snackbar.show(this, msg);
+  }
+
+  /** Clears the batch-in-progress bookkeeping (used by both a normal
+   *  completion and every early-abort path above) and refreshes the
+   *  downloaded-keys cross-ref if a batch actually ran -- covers the
+   *  cancelled-mid-run case too, where whatever finished before the
+   *  cancel still belongs in the library cross-ref. */
+  private void finishBatchQuietly() {
+    boolean hadBatch = batchQueue != null;
+    batchQueue = null;
+    batchAdapter = null;
+    if (hadBatch) refreshDownloadedKeys();
+  }
+
   /** Starts a brand-new search: resets pagination (page/reachedEnd/raw
    *  cache) and replaces the adapter — the "new adapter per search" path
    *  the append() path (subsequent pages of the SAME search) is kept
@@ -365,6 +562,15 @@ public class MainActivity extends Activity {
     loadingMore = false;
     loadedRaw.clear();
     adapter = null;
+
+    // A brand-new search replaces the adapter wholesale (below), which
+    // would otherwise leave a stale batch action bar on screen bound to
+    // an adapter that's about to stop existing (task B2) -- abort any
+    // running batch and hide the bar up front rather than relying on the
+    // batch driver's own adapter!=batchAdapter guard to notice later.
+    batchCancelled = true;
+    finishBatchQuietly();
+    if (selectionBar != null) selectionBar.setVisibility(View.GONE);
 
     filterRail.setVisibility(View.VISIBLE);
     updateFilterChipStyles();
@@ -529,6 +735,9 @@ public class MainActivity extends Activity {
     newAdapter.onRowClick = (pos, c) ->
         startActivity(new Intent(this, SongDetailActivity.class).putExtra("chart", c));
     newAdapter.onDownload = (pos, c) -> startDownload(pos, c, newAdapter);
+    // Batch action bar (task B2): kept in lockstep with whichever adapter
+    // is current, same pattern as onRowClick/onDownload above.
+    newAdapter.onSelectionChanged = this::updateSelectionBar;
     // Seed with whatever's already known (task-search-screen-features) —
     // refreshDownloadedKeys() (called right after this in onPageLoaded)
     // will follow up with an up-to-date read, but there's no reason to

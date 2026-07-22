@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Batch selection action bar background (task B2, DESIGN.md §7.8
+  surface language): `surface_top` fill (same fill as bg_snackbar.xml)
+  with only the TOP corners rounded (r_md) — the bar itself is pinned
+  flush to the bottom of the screen (view_selection_bar.xml), so
+  rounding the bottom corners would just look clipped against the
+  screen edge. Plus the same 1px `edge_top` "lit from above" highlight
+  bg_snackbar.xml/bg_row.xml use.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <!-- 1. Base fill -->
+  <item>
+    <shape android:shape="rectangle">
+      <corners
+          android:topLeftRadius="@dimen/r_md"
+          android:topRightRadius="@dimen/r_md" />
+      <solid android:color="@color/surface_top" />
+    </shape>
+  </item>
+
+  <!-- 2. Top inner highlight -->
+  <item android:gravity="top|fill_horizontal" android:height="1dp">
+    <shape android:shape="rectangle">
+      <solid android:color="@color/edge_top" />
+    </shape>
+  </item>
+
+</layer-list>

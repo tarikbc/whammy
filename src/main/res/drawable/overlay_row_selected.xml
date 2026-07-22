@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Result row selection tint (task B2 / multi-select batch download):
+  a subtle `star` wash + 1.5dp `star` outline over the whole row while
+  selected — the same "star 1.5dp stroke = selected" language the
+  filter chips already use (DESIGN.md §7.11), just applied to a row
+  instead of a chip. The wash color is a one-off translucent tint of
+  `star` (#35E6E1), inlined the same way bg_button_primary.xml/
+  note_done.xml inline their one-off sheen colors rather than adding a
+  new colors.xml token for a single gradient/overlay use.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <!-- 1. Wash -->
+  <item>
+    <shape android:shape="rectangle">
+      <corners android:radius="@dimen/r_lg" />
+      <solid android:color="#2635E6E1" />
+    </shape>
+  </item>
+
+  <!-- 2. Selected outline -->
+  <item>
+    <shape android:shape="rectangle">
+      <corners android:radius="@dimen/r_lg" />
+      <stroke android:width="1.5dp" android:color="@color/star" />
+      <solid android:color="@android:color/transparent" />
+    </shape>
+  </item>
+
+</layer-list>

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -59,6 +60,111 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
 
   /** Set by the host to receive whole-row taps. May be null. */
   public OnRowClick onRowClick;
+
+  /**
+   * Multi-select batch download (task B2). Fired every time selection
+   * mode is entered/exited or the selected set changes (a toggle, Select
+   * all, or the exit path) -- the host uses this to show/hide + relabel
+   * the bottom batch action bar without polling the adapter.
+   */
+  public interface OnSelectionChanged {
+    void onSelectionChanged(boolean selectionMode, int count);
+  }
+
+  /** Set by the host to receive selection-mode/count updates. May be null. */
+  public OnSelectionChanged onSelectionChanged;
+
+  /** True once a long-press has entered selection mode; false in normal
+   *  browsing/tap-to-open-detail mode. */
+  private boolean selectionMode;
+
+  /** Selected row positions (task B2). Positions are a stable key here
+   *  because this adapter's backing list only ever GROWS (append(), for
+   *  pagination) -- existing rows never shift or get removed out from
+   *  under a position-keyed set, unlike LibraryAdapter's File-keyed
+   *  {@code confirming} set, which has to survive mid-list removals.
+   *  LinkedHashSet keeps insertion order so a batch queue built from this
+   *  set downloads in the order the user tapped, not sorted-by-position
+   *  order -- {@link #getSelectedPositionsSorted()} exists separately for
+   *  callers that specifically want on-screen (ascending) order instead. */
+  private final Set<Integer> selected = new LinkedHashSet<>();
+
+  /** True while selection mode is active (a long-press has fired and the
+   *  user hasn't exited yet via Cancel/back/batch-complete). */
+  public boolean isSelectionMode() {
+    return selectionMode;
+  }
+
+  public int getSelectedCount() {
+    return selected.size();
+  }
+
+  /** Selected positions in ascending (on-screen) order -- the order the
+   *  host's batch queue driver downloads in, so results appear top-to-
+   *  bottom as the queue advances rather than in an arbitrary tap order. */
+  public List<Integer> getSelectedPositionsSorted() {
+    List<Integer> out = new ArrayList<>(selected);
+    Collections.sort(out);
+    return out;
+  }
+
+  /** The chart at {@code pos} -- the host's batch queue driver needs this
+   *  to hand each selected row's {@link Chart} to {@link DownloadHelper}
+   *  without re-deriving it from a stale outer list of its own. */
+  public Chart chartAt(int pos) {
+    return charts.get(pos);
+  }
+
+  /** Long-press entry point (task B2): enters selection mode (a no-op if
+   *  already in it) and selects {@code pos} -- the row that was
+   *  long-pressed starts selected, matching how most Android multi-select
+   *  lists behave. notifyDataSetChanged (not notifyItemChanged) since
+   *  EVERY row needs to start rendering its selection chrome (or lack of
+   *  it) the moment selection mode turns on, not just this one. */
+  public void enterSelectionMode(int pos) {
+    selectionMode = true;
+    selected.add(pos);
+    notifyDataSetChanged();
+    fireSelectionChanged();
+  }
+
+  /** Tap-to-toggle while already in selection mode. Package-private on
+   *  purpose -- the host never needs to toggle a row directly, only read/
+   *  drive the aggregate state; toggling only ever happens from this
+   *  adapter's own row/note-button tap handling in onBindViewHolder. */
+  void toggleSelected(int pos) {
+    if (!selected.add(pos)) selected.remove(pos);
+    notifyItemChanged(pos);
+    fireSelectionChanged();
+  }
+
+  /** Selects every currently-loaded row -- the batch bar's "Select all"
+   *  (task B2). No-op if selection mode isn't active (nothing for the
+   *  host to have shown a "Select all" affordance for in the first
+   *  place, but defensive regardless). */
+  public void selectAll() {
+    if (!selectionMode) return;
+    for (int i = 0; i < charts.size(); i++) selected.add(i);
+    notifyDataSetChanged();
+    fireSelectionChanged();
+  }
+
+  /** Exits selection mode and clears the selection: the Cancel/✕ action,
+   *  the system back button (MainActivity intercepts it while selection
+   *  mode is active), and a completed/cancelled batch queue all funnel
+   *  through here. No-op (and no redundant notify) if already out of
+   *  selection mode with nothing selected. */
+  public void exitSelectionMode() {
+    if (!selectionMode && selected.isEmpty()) return;
+    selectionMode = false;
+    selected.clear();
+    notifyDataSetChanged();
+    fireSelectionChanged();
+  }
+
+  private void fireSelectionChanged() {
+    if (onSelectionChanged != null) onSelectionChanged.onSelectionChanged(selectionMode, selected.size());
+  }
 
   /** Instrument -> badge icon (DESIGN.md §7.10/§7.7). Instruments not in
    *  this map (e.g. "band") render no badge — presence of the icon is
@@ -258,13 +364,49 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
         break;
     }
 
+    // Multi-select chrome (task B2): reset on EVERY bind, selected or not
+    // -- same "never leave a recycled row's chrome stale" rule the
+    // DownloadState branches above already follow, just for a second,
+    // orthogonal piece of per-row state.
+    boolean isSelected = selectionMode && selected.contains(position);
+    h.selectRowTint.setVisibility(isSelected ? View.VISIBLE : View.GONE);
+    h.selectArtWash.setVisibility(isSelected ? View.VISIBLE : View.GONE);
+    h.selectCheck.setVisibility(isSelected ? View.VISIBLE : View.GONE);
+    if (isSelected) {
+      h.selectCheck.setImageTintList(ColorStateList.valueOf(ctx.getColor(R.color.on_accent)));
+    }
+
     final int pos = position;
+
+    // Note button: while selection mode is active it's just another
+    // toggle target (a stray tap here mid-multi-select shouldn't fire an
+    // individual download) -- otherwise unchanged single-tap behavior.
     h.noteButton.setOnClickListener(v -> {
+      if (selectionMode) {
+        toggleSelected(pos);
+        return;
+      }
       if (onDownload != null) onDownload.onDownload(pos, c);
     });
 
+    // Whole-row tap: toggles selection in selection mode, opens detail
+    // otherwise (DESIGN.md §7.13) -- unchanged when not selecting.
     h.itemView.setOnClickListener(v -> {
+      if (selectionMode) {
+        toggleSelected(pos);
+        return;
+      }
       if (onRowClick != null) onRowClick.onRowClick(pos, c);
+    });
+
+    // Long-press: the sole entry point into selection mode (task B2).
+    // Already-in-selection-mode long-presses are a no-op here (the row is
+    // already reachable via a plain tap) -- returning true either way
+    // marks the gesture consumed so it never falls through to whatever
+    // OnLongClickListener a parent might otherwise have.
+    h.itemView.setOnLongClickListener(v -> {
+      if (!selectionMode) enterSelectionMode(pos);
+      return true;
     });
   }
 
@@ -561,15 +703,20 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
   }
 
   static class RowHolder extends RecyclerView.ViewHolder {
+    final FrameLayout artContainer;
     final ImageView art;
     final TextView title, meta, errorText;
     final LinearLayout badges;
     final FrameLayout noteButton;
     final ImageView noteIcon;
     final ProgressRingView progressRing;
+    final View selectRowTint;
+    final View selectArtWash;
+    final ImageView selectCheck;
 
     RowHolder(View v) {
       super(v);
+      artContainer = v.findViewById(R.id.art_container);
       art = v.findViewById(R.id.art);
       title = v.findViewById(R.id.title);
       meta = v.findViewById(R.id.meta);
@@ -578,10 +725,18 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
       noteButton = v.findViewById(R.id.note_button);
       noteIcon = v.findViewById(R.id.note_icon);
       progressRing = v.findViewById(R.id.progress_ring);
+      selectRowTint = v.findViewById(R.id.select_row_tint);
+      selectArtWash = v.findViewById(R.id.select_art_wash);
+      selectCheck = v.findViewById(R.id.select_check);
 
-      // Corner-box fix: force-clip both the row and the album art to
-      // their rounded outlines, independent of how the platform
-      // resolves the layer-list backgrounds' own outlines.
+      // Corner-box fix: force-clip both the row and the album-art
+      // container to their rounded outlines, independent of how the
+      // platform resolves the layer-list backgrounds' own outlines.
+      // Clipping is on art_container (not `art` itself) now that task
+      // B2's select_art_wash/select_check overlay it as siblings inside
+      // that same FrameLayout -- clipToOutline on a ViewGroup clips every
+      // child's drawing, not just its own background, so the overlay
+      // rides along with the same r_sm rounding for free.
       final float rowRadius = v.getResources().getDimension(R.dimen.r_lg);
       v.setOutlineProvider(new ViewOutlineProvider() {
         @Override public void getOutline(View view, Outline outline) {
@@ -591,12 +746,12 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
       v.setClipToOutline(true);
 
       final float artRadius = v.getResources().getDimension(R.dimen.r_sm);
-      art.setOutlineProvider(new ViewOutlineProvider() {
+      artContainer.setOutlineProvider(new ViewOutlineProvider() {
         @Override public void getOutline(View view, Outline outline) {
           outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), artRadius);
         }
       });
-      art.setClipToOutline(true);
+      artContainer.setClipToOutline(true);
     }
   }
 }

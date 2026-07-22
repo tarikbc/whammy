@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Batch selection action bar (task B2 / multi-select batch download):
+  inflated by MainActivity (attachToRoot=false) into the activity's own
+  content FrameLayout (android.R.id.content) — the same host + technique
+  Snackbar.java uses for view_snackbar.xml — so `layout_gravity="bottom"`
+  below is exactly what pins it to the bottom of the screen once added.
+
+  Sits ABOVE the snackbar's own z-order (higher `elevation` than
+  view_snackbar.xml's 6dp) as a belt-and-suspenders guard, but in
+  practice MainActivity always hides this bar (adapter.exitSelectionMode)
+  BEFORE showing the batch-complete Snackbar, so the two are never
+  actually on screen at once.
+
+  Shown/hidden and populated entirely by MainActivity based on
+  ResultsAdapter#onSelectionChanged — GONE by default.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom"
+    android:background="@drawable/bg_selection_bar"
+    android:elevation="8dp">
+
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      android:gravity="center_vertical"
+      android:paddingStart="@dimen/screen_padding_h"
+      android:paddingEnd="@dimen/screen_padding_h"
+      android:paddingTop="@dimen/space_12"
+      android:paddingBottom="@dimen/space_12">
+
+    <!-- Exit selection mode: same convention as the app-bar library
+         glyph (activity_main.xml) — borderless icon button, text_lo. -->
+    <ImageView
+        android:id="@+id/selection_cancel"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:padding="6dp"
+        android:src="@drawable/ic_clear"
+        android:tint="@color/text_lo"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:contentDescription="@string/selection_cancel_desc" />
+
+    <TextView
+        android:id="@+id/selection_count"
+        style="@style/Text.Body"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="@dimen/space_12"
+        android:textColor="@color/text_hi" />
+
+    <!-- Select all: text-only star action, same weight/size family as
+         the snackbar's own action label (view_snackbar.xml's
+         snackbar_action) but not all-caps letter-spaced — reads as a
+         lighter-weight secondary control next to the primary Download
+         button. -->
+    <TextView
+        android:id="@+id/selection_select_all"
+        android:fontFamily="@font/archivo_semibold"
+        android:textSize="14sp"
+        android:textColor="@color/star"
+        android:includeFontPadding="false"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/space_8"
+        android:paddingEnd="@dimen/space_8"
+        android:paddingTop="@dimen/space_8"
+        android:paddingBottom="@dimen/space_8"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:text="@string/select_all_action" />
+
+    <!-- Primary action (DESIGN.md §7.6/§7.13 button treatment): filled
+         `star`, glass sheen, `on_accent` label, r_md — same
+         bg_button_primary/Text.Button combo the permission screen's
+         Grant access and the detail screen's Download CTA use, just at
+         a shorter inline height (44dp) to fit this bar instead of the
+         full-width 54dp primary_button_height. -->
+    <TextView
+        android:id="@+id/selection_download"
+        style="@style/Text.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="44dp"
+        android:layout_marginStart="@dimen/space_12"
+        android:minWidth="128dp"
+        android:gravity="center"
+        android:paddingStart="@dimen/space_16"
+        android:paddingEnd="@dimen/space_16"
+        android:background="@drawable/bg_button_primary"
+        android:clickable="true"
+        android:focusable="true" />
+  </LinearLayout>
+</FrameLayout>

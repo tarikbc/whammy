@@ -32,18 +32,49 @@
       android:paddingBottom="@dimen/row_padding_v">
 
     <!-- Album art: 56dp rounded thumbnail, the row's identity
-         (DESIGN.md §7.3). `src` is the placeholder tile until ArtLoader
-         swaps in the decoded cover; `background` is a persistent
-         edge_hair hairline that stays visible once a real cover loads.
-         Corners are clipped to r_sm via ViewOutlineProvider set on this
-         view in RowHolder (plain SDK, API 21+). -->
-    <ImageView
-        android:id="@+id/art"
+         (DESIGN.md §7.3). Wrapped in art_container (task B2: multi-select)
+         so the selection wash/check overlay below can share the same
+         rounded clip — ViewOutlineProvider (r_sm) is installed on this
+         FrameLayout by RowHolder, not on `art` itself, so the overlay's
+         square corners never poke past the thumbnail's rounded shape. -->
+    <FrameLayout
+        android:id="@+id/art_container"
         android:layout_width="@dimen/album_art_size"
-        android:layout_height="@dimen/album_art_size"
-        android:scaleType="centerCrop"
-        android:src="@drawable/art_placeholder"
-        android:background="@drawable/art_hairline" />
+        android:layout_height="@dimen/album_art_size">
+
+      <!-- `src` is the placeholder tile until ArtLoader swaps in the
+           decoded cover; `background` is a persistent edge_hair hairline
+           that stays visible once a real cover loads. -->
+      <ImageView
+          android:id="@+id/art"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          android:scaleType="centerCrop"
+          android:src="@drawable/art_placeholder"
+          android:background="@drawable/art_hairline" />
+
+      <!-- Multi-select (task B2, DESIGN.md button/surface language): a
+           star-tinted wash + centered check, shown only while this row is
+           selected. Both start GONE and are set per-bind in
+           ResultsAdapter#onBindViewHolder — never left stale on a
+           recycled row (same "reset every non-active state on every
+           bind" rule the DownloadState branches already follow). -->
+      <View
+          android:id="@+id/select_art_wash"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          android:background="@drawable/overlay_art_selected"
+          android:visibility="gone" />
+
+      <ImageView
+          android:id="@+id/select_check"
+          android:layout_width="22dp"
+          android:layout_height="22dp"
+          android:layout_gravity="center"
+          android:src="@drawable/ic_check"
+          android:visibility="gone"
+          android:importantForAccessibility="no" />
+    </FrameLayout>
 
     <LinearLayout
         android:layout_width="0dp"
@@ -145,4 +176,19 @@
           android:visibility="gone" />
     </FrameLayout>
   </LinearLayout>
+
+  <!-- Multi-select row tint (task B2): a subtle star wash + hairline over
+       the WHOLE row while selected, drawn last so it sits above bg_row
+       and every child above. Non-clickable/non-focusable — a plain View
+       consumes no touch, so taps still fall through to itemView's own
+       OnClickListener untouched. Clipped to r_lg for free by itemView's
+       own ViewOutlineProvider + clipToOutline(true) (RowHolder), since
+       clipToOutline on a ViewGroup clips every child's drawing, not just
+       its own background. -->
+  <View
+      android:id="@+id/select_row_tint"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:background="@drawable/overlay_row_selected"
+      android:visibility="gone" />
 </FrameLayout>

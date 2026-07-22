@@ -18,6 +18,14 @@
   <string name="download_again_action">DOWNLOAD AGAIN</string>
   <string name="already_in_library_fmt">Already in your library: %1$s</string>
 
+  <!-- Multi-select batch download (task B2) -->
+  <string name="selection_cancel_desc">Exit selection</string>
+  <string name="select_all_action">SELECT ALL</string>
+  <string name="selection_count_fmt">%1$d selected</string>
+  <string name="download_n_fmt">Download (%1$d)</string>
+  <string name="batch_added_fmt">✓ Added %1$d charts</string>
+  <string name="batch_added_failed_fmt">Added %1$d, %2$d failed</string>
+
   <!-- Permission screen (DESIGN.md §7.6) -->
   <string name="permission_headline">Let Whammy reach your songs</string>
   <string name="permission_body">Whammy needs all-files access to drop .sng charts into your Clone Hero songs folder. It only writes charts you download.</string>

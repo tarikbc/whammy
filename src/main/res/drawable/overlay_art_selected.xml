@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Album-art selection wash (task B2 / multi-select batch download): an
+  opaque-ish `star` fill drawn over the thumbnail so the centered
+  select_check glyph (on_accent, high contrast against `star`) reads
+  clearly regardless of the underlying cover art. Sized/clipped to match
+  art_container (r_sm) by row_result.xml + RowHolder's ViewOutlineProvider.
+  Same "inline the one-off translucent tint" convention as
+  overlay_row_selected.xml.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+  <corners android:radius="@dimen/r_sm" />
+  <solid android:color="#CC35E6E1" />
+</shape>
