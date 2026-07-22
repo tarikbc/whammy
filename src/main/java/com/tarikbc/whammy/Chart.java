@@ -17,16 +17,21 @@ public class Chart implements java.io.Serializable {
     public final String album, genre, year;
     public final Map<String, Integer> difficulties;
     public final boolean hasLyrics, hasVocals, hasSoloSections;
+    /** Charter-written blurb (the in-game loading quip); often describes a setlist's contents. Null if absent. */
+    public final String loadingPhrase;
+    /** The chart is a pack/setlist (a bundle of many songs), per the API's driveChartIsPack. */
+    public final boolean isPack;
     public Chart(String md5, String name, String artist, String charter, String albumArtMd5,
                  List<String> instruments, boolean hasVideoBackground, int songLengthMs,
                  boolean proDrums, boolean modchart) {
         this(md5, name, artist, charter, albumArtMd5, instruments, hasVideoBackground, songLengthMs,
-             proDrums, modchart, null, null, null, Collections.emptyMap(), false, false, false);
+             proDrums, modchart, null, null, null, Collections.emptyMap(), false, false, false, null, false);
     }
     private Chart(String md5, String name, String artist, String charter, String albumArtMd5,
                  List<String> instruments, boolean hasVideoBackground, int songLengthMs,
                  boolean proDrums, boolean modchart, String album, String genre, String year,
-                 Map<String, Integer> difficulties, boolean hasLyrics, boolean hasVocals, boolean hasSoloSections) {
+                 Map<String, Integer> difficulties, boolean hasLyrics, boolean hasVocals, boolean hasSoloSections,
+                 String loadingPhrase, boolean isPack) {
         this.md5 = md5; this.name = name; this.artist = artist; this.charter = charter; this.albumArtMd5 = albumArtMd5;
         this.instruments = instruments == null ? Collections.emptyList() : Collections.unmodifiableList(instruments);
         this.hasVideoBackground = hasVideoBackground;
@@ -36,6 +41,7 @@ public class Chart implements java.io.Serializable {
         this.album = album; this.genre = genre; this.year = year;
         this.difficulties = difficulties == null ? Collections.emptyMap() : Collections.unmodifiableMap(difficulties);
         this.hasLyrics = hasLyrics; this.hasVocals = hasVocals; this.hasSoloSections = hasSoloSections;
+        this.loadingPhrase = loadingPhrase; this.isPack = isPack;
     }
     public static Chart fromJson(JSONObject o) {
         List<String> instruments = new ArrayList<>();
@@ -69,8 +75,18 @@ public class Chart implements java.io.Serializable {
             o.optBoolean("pro_drums", false),
             o.optBoolean("modchart", false),
             s(o,"album"), s(o,"genre"), s(o,"year"),
-            difficulties, hasLyrics, hasVocals, hasSoloSections
+            difficulties, hasLyrics, hasVocals, hasSoloSections,
+            s(o,"loading_phrase"), o.optBoolean("driveChartIsPack", false)
         );
+    }
+
+    /** Whether to treat this as a setlist/pack: the API's pack flag, or a name that
+     *  says so (setlists' pack flag is inconsistent across duplicate entries). */
+    public boolean isSetlist() {
+        if (isPack) return true;
+        if (name == null) return false;
+        String n = name.toLowerCase(java.util.Locale.ROOT);
+        return n.contains("setlist") || n.contains("endless setlist") || n.contains("megamix");
     }
     private static void putDifficulty(Map<String, Integer> difficulties, JSONObject o, String key, String label) {
         int v = o.optInt(key, -1);

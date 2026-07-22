@@ -166,5 +166,31 @@ class EncoreApiTest {
         assertFalse(c.hasLyrics);
         assertFalse(c.hasVocals);
         assertFalse(c.hasSoloSections);
+        assertNull(c.loadingPhrase);
+        assertFalse(c.isPack);
+        assertFalse(c.isSetlist());
+    }
+
+    @Test void chart_fromJson_readsLoadingPhraseAndPackFlag() {
+        JSONObject o = new JSONObject();
+        o.put("name", "Some Song");
+        o.put("loading_phrase", "Have fun with this one!");
+        o.put("driveChartIsPack", true);
+        Chart c = Chart.fromJson(o);
+        assertEquals("Have fun with this one!", c.loadingPhrase);
+        assertTrue(c.isPack);
+        assertTrue(c.isSetlist());   // isPack ⇒ setlist
+    }
+
+    @Test void chart_isSetlist_detectsByNameWhenNotFlaggedPack() {
+        JSONObject o = new JSONObject();
+        o.put("name", "Children of Bodom Endless Setlist");
+        Chart c = Chart.fromJson(o);
+        assertFalse(c.isPack);
+        assertTrue(c.isSetlist());   // name contains "setlist"
+
+        JSONObject o2 = new JSONObject();
+        o2.put("name", "Sultans of Swing");
+        assertFalse(Chart.fromJson(o2).isSetlist());
     }
 }
