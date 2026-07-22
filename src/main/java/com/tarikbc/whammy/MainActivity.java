@@ -75,9 +75,15 @@ public class MainActivity extends Activity {
     // row 1 DOWNLOADING — guitar/bass/rhythm
     fake.add(new Chart("m1", "Joe Perry Guitar Battle (Co-op)", "Joe Perry", "Neversoft", "d1dc634bc90b064ed16fdcbfcb7969d0",
         java.util.Arrays.asList("guitar", "bass", "rhythm"), false, 249215, false, false));
-    // row 2 DONE
-    fake.add(new Chart("m2", "Guitar Hero 1: Endless Setlist", "Various Artists", "Harmonix, Miscellany", "edf7d4c3aad4334c3f6452edc9186e45",
-        java.util.Arrays.asList("guitar"), false, 11076561, false, false));
+    // row 2 DONE — a setlist via fromJson so the detail screen shows the
+    // SETLIST treatment + loading_phrase description blurb.
+    fake.add(demoChart("{\"md5\":\"m2\",\"name\":\"Guitar Hero 1: Endless Setlist\","
+        + "\"artist\":\"Various Artists\",\"charter\":\"Harmonix, Miscellany\","
+        + "\"albumArtMd5\":\"edf7d4c3aad4334c3f6452edc9186e45\",\"year\":\"2005-2007\","
+        + "\"genre\":\"Rock\",\"song_length\":11076561,\"driveChartIsPack\":true,"
+        + "\"loading_phrase\":\"Every song from Guitar Hero 1, back to back in one continuous chart. "
+        + "47 songs, no breaks — the ultimate endurance run. Good luck.\","
+        + "\"diff_guitar\":6,\"notesData\":{\"instruments\":[\"guitar\"]}}"));
     // row 3 ERROR
     fake.add(new Chart("m3", "Guitar Hero: On Tour Endless Setlist", "Various Artists", "Vicarious Visions, Miscellany", "f3ece681106f6396107c3f96e05fd2a2",
         java.util.Arrays.asList("guitar", "bass"), false, 6872680, false, false));

@@ -123,32 +123,72 @@
               android:layout_height="wrap_content"
               android:visibility="gone" />
 
-          <!-- Duration chip (DESIGN.md §7.13: "near the header"). -->
+          <!-- Setlist marker + duration chip, side by side (DESIGN.md
+               §7.13: duration "near the header"; setlist task: a
+               prominent SETLIST marker "beside the duration"). The
+               setlist chip carries its own trailing gap so it collapses
+               cleanly (no stray gap before duration_chip) when this
+               chart isn't a setlist and it's gone. -->
           <LinearLayout
-              android:id="@+id/duration_chip"
               android:layout_width="wrap_content"
-              android:layout_height="23dp"
+              android:layout_height="wrap_content"
               android:layout_marginTop="@dimen/space_8"
               android:orientation="horizontal"
-              android:gravity="center_vertical"
-              android:paddingStart="@dimen/space_8"
-              android:paddingEnd="@dimen/space_8"
-              android:background="@drawable/bg_chip"
-              android:visibility="gone">
+              android:gravity="center_vertical">
 
-            <ImageView
-                android:layout_width="15dp"
-                android:layout_height="15dp"
-                android:src="@drawable/ic_clock"
-                android:tint="@color/text" />
-
-            <TextView
-                android:id="@+id/duration_text"
-                style="@style/Text.Badge"
-                android:textColor="@color/text"
-                android:layout_marginStart="3dp"
+            <!-- SETLIST marker (DESIGN.md §7.10 bolder variant, task
+                 setlist-awareness): shown only when chart.isSetlist().
+                 bg_chip_setlist = star wash fill + star hairline; label
+                 text is star-colored too, one step past the VIDEO
+                 chip's icon-only accent since this is the headline
+                 distinction for the whole screen. -->
+            <LinearLayout
+                android:id="@+id/setlist_chip"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="23dp"
+                android:layout_marginEnd="@dimen/badge_gap"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="@dimen/space_8"
+                android:paddingEnd="@dimen/space_8"
+                android:background="@drawable/bg_chip_setlist"
+                android:visibility="gone">
+
+              <TextView
+                  style="@style/Text.Charter"
+                  android:textColor="@color/star"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="SETLIST" />
+              <!-- TODO promote "SETLIST" to strings.xml -->
+            </LinearLayout>
+
+            <!-- Duration chip. -->
+            <LinearLayout
+                android:id="@+id/duration_chip"
+                android:layout_width="wrap_content"
+                android:layout_height="23dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="@dimen/space_8"
+                android:paddingEnd="@dimen/space_8"
+                android:background="@drawable/bg_chip"
+                android:visibility="gone">
+
+              <ImageView
+                  android:layout_width="15dp"
+                  android:layout_height="15dp"
+                  android:src="@drawable/ic_clock"
+                  android:tint="@color/text" />
+
+              <TextView
+                  android:id="@+id/duration_text"
+                  style="@style/Text.Badge"
+                  android:textColor="@color/text"
+                  android:layout_marginStart="3dp"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content" />
+            </LinearLayout>
           </LinearLayout>
         </LinearLayout>
       </LinearLayout>
@@ -187,6 +227,36 @@
           android:layout_width="match_parent"
           android:layout_height="wrap_content"
           android:layout_marginTop="@dimen/space_20" />
+
+      <!-- About / description blurb (setlist-awareness task):
+           chart.loadingPhrase verbatim, a charter-written quip that's
+           the closest thing the API gives to a track description —
+           the key payoff for setlists (e.g. "All ten main Children of
+           Bodom studio albums... in one chart."), but shown for ANY
+           chart that has one. Whole section hidden when loadingPhrase
+           is null/empty (SongDetailActivity#bindDescription). -->
+      <LinearLayout
+          android:id="@+id/about_container"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="@dimen/space_24"
+          android:orientation="vertical"
+          android:visibility="gone">
+
+        <TextView
+            style="@style/Text.Eyebrow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="About" />
+        <!-- TODO promote "About" to strings.xml -->
+
+        <TextView
+            android:id="@+id/about_text"
+            style="@style/Text.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8" />
+      </LinearLayout>
 
     </LinearLayout>
   </ScrollView>

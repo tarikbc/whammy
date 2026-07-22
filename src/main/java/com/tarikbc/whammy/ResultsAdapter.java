@@ -217,14 +217,17 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
    * whatever the recycled view previously held (h.badges.removeAllViews
    * as the very first step — RecyclerView recycles rows, so a stale
    * chip from a different chart must never survive into this bind),
-   * then adds only the chips this chart actually has: ONE combined
-   * instrument-icon cluster chip, a duration chip, a star-tinted VIDEO
-   * chip, and label-only PRO/MOD chips. Never renders an empty chip for
-   * an absent/false attribute.
+   * then adds only the chips this chart actually has: a leading
+   * star-tinted SETLIST chip (packs/setlists only — {@link
+   * Chart#isSetlist()}), ONE combined instrument-icon cluster chip, a
+   * duration chip, a star-tinted VIDEO chip, and label-only PRO/MOD
+   * chips. Never renders an empty chip for an absent/false attribute.
    */
   private void buildBadges(RowHolder h, Chart c) {
     Context ctx = h.itemView.getContext();
     h.badges.removeAllViews();
+
+    if (c.isSetlist()) buildSetlistChip(h.badges, ctx);
 
     buildInstrumentChip(h.badges, ctx, c);
 
@@ -238,6 +241,32 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
 
     boolean any = h.badges.getChildCount() > 0;
     h.badges.setVisibility(any ? View.VISIBLE : View.GONE);
+  }
+
+  /**
+   * SETLIST chip: a leading, star-tinted marker for packs/setlists
+   * ({@link Chart#isSetlist()}) so they're recognizable at a glance
+   * before ever reading the title. Goes one step bolder than the VIDEO
+   * chip's hairline-only treatment — {@code bg_chip_setlist}'s faint
+   * star wash fill plus star-colored label text, not just a star icon
+   * tint — since this is the row's headline distinction, not a footnote
+   * feature. Always the first chip added (called before the instrument
+   * cluster in {@link #buildBadges}).
+   */
+  private void buildSetlistChip(LinearLayout row, Context ctx) {
+    LinearLayout chip = newChip(ctx, row, R.drawable.bg_chip_setlist);
+
+    TextView tv = new TextView(ctx, null, 0, R.style.Text_Charter);
+    tv.setLayoutParams(new LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+    tv.setTextColor(ctx.getColor(R.color.star));
+    // No R.string.badge_setlist exists (strings.xml is outside this task's
+    // file scope — values/ belongs to another agent); literal is safe
+    // since Text.Charter already applies textAllCaps.
+    tv.setText("SETLIST");
+    chip.addView(tv);
+
+    row.addView(chip);
   }
 
   /**

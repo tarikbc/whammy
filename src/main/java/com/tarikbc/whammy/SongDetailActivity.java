@@ -42,11 +42,13 @@ public class SongDetailActivity extends Activity {
     bindCharter(chart);
     bindInstruments(chart);
     bindBadges(chart);
+    bindDescription(chart);
     bindDownloadButton();
   }
 
   /** Hero header: 112dp cover (ArtLoader, r_md clip), title, artist,
-   *  "album · year · genre" sub line, duration chip (DESIGN.md §7.13). */
+   *  "album · year · genre" sub line, SETLIST marker + duration chip
+   *  (DESIGN.md §7.13; setlist-awareness task adds the marker). */
   private void bindHero(Chart chart) {
     ImageView heroArt = findViewById(R.id.hero_art);
     final float artRadius = getResources().getDimension(R.dimen.r_md);
@@ -69,6 +71,8 @@ public class SongDetailActivity extends Activity {
       sub.setText(subText);
       sub.setVisibility(View.VISIBLE);
     }
+
+    findViewById(R.id.setlist_chip).setVisibility(chart.isSetlist() ? View.VISIBLE : View.GONE);
 
     View durationChip = findViewById(R.id.duration_chip);
     String duration = Chart.formatDuration(chart.songLengthMs);
@@ -153,6 +157,25 @@ public class SongDetailActivity extends Activity {
       badges.addView(iconChip(R.drawable.bg_chip, R.drawable.ic_solo, R.color.text, "SOLOS"));
     }
     // TODO promote badge labels ("VIDEO"/"PRO DRUMS"/"MOD"/"LYRICS"/"VOCALS"/"SOLOS") to strings.xml
+  }
+
+  /** About / description blurb: {@code chart.loadingPhrase} verbatim
+   *  (the charter-written in-game loading quip) under a quiet "About"
+   *  label, quoted so it reads as a description rather than app copy.
+   *  Applies to any chart with a phrase, not only setlists — but it's
+   *  the closest thing to a track description the API provides, and
+   *  the key payoff for setlists (e.g. "All ten main Children of Bodom
+   *  studio albums... in one chart."). Whole section hidden when the
+   *  phrase is null/empty. */
+  private void bindDescription(Chart chart) {
+    View container = findViewById(R.id.about_container);
+    String phrase = chart.loadingPhrase;
+    if (phrase == null || phrase.trim().isEmpty()) {
+      container.setVisibility(View.GONE);
+      return;
+    }
+    ((TextView) findViewById(R.id.about_text)).setText("“" + phrase.trim() + "”");
+    container.setVisibility(View.VISIBLE);
   }
 
   private void bindDownloadButton() {
