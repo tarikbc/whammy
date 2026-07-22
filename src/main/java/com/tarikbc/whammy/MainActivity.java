@@ -425,6 +425,7 @@ public class MainActivity extends Activity {
   }
 
   private void onPageLoadFailure(int gen, int page) {
+    if (isFinishing() || isDestroyed()) return; // user already left -- don't touch dead views
     if (gen != searchGeneration) return;   // a newer search superseded this one
     loadingMore = false;
     if (page == 1 && loadedRaw.isEmpty()) {
@@ -446,6 +447,7 @@ public class MainActivity extends Activity {
    *  into {@link #loadedRaw}, then run through the client-side video
    *  filter before being shown/appended. */
   private void onPageLoaded(int gen, int page, List<Chart> raw, int chainDepth) {
+    if (isFinishing() || isDestroyed()) return; // user already left -- don't touch dead views
     if (gen != searchGeneration) return;   // a newer search superseded this one
     currentPage = page;
 
@@ -498,6 +500,7 @@ public class MainActivity extends Activity {
     executor.execute(() -> {
       final Set<String> keys = SongStore.existingChartKeys();
       mainHandler.post(() -> {
+        if (isFinishing() || isDestroyed()) return; // user already left
         downloadedKeys = keys;
         if (adapter != null) adapter.setDownloadedKeys(keys);
       });
@@ -537,18 +540,35 @@ public class MainActivity extends Activity {
   }
 
   /** Download flow shared by every row's note button (DESIGN.md §7.4/§7.8):
-   *  permission gate first (a missing grant must never silently no-op the
-   *  tap), then background download -> place into the Songs folder ->
-   *  DONE + a scan-hint toast (§7.9), or ERROR with the temp file cleaned up. */
+   *  permission gate first (DESIGN.md §7.6's rationale screen instead of
+   *  jumping straight to settings -- a missing grant must never silently
+   *  no-op the tap), then a duplicate-download confirm if the chart is
+   *  already in the library, then background download -> place into the
+   *  Songs folder -> DONE + a scan hint (§7.9), or ERROR with the temp
+   *  file left in place for a resumed retry (see EncoreApi#downloadSng). */
   private void startDownload(int pos, Chart chart, ResultsAdapter adapter) {
     if (!Permissions.hasAllFiles()) {
-      Toast.makeText(this,
-          "Whammy needs storage access to save charts — opening settings…",
-          Toast.LENGTH_LONG).show();
-      Permissions.requestAllFiles(this);
+      startActivity(new Intent(this, PermissionActivity.class));
       return;
     }
 
+    // Duplicate handling (task B1 robustness): a chart already sitting in
+    // the library (any row's tap, not just its own -- keyed by chart, not
+    // position) gets a confirm rather than silently re-downloading over
+    // it. Never gates a genuine ERROR-state retry: that row's own chart
+    // never actually made it into the library the first time.
+    boolean alreadyInLibrary = adapter.stateOf(pos) != ResultsAdapter.DownloadState.ERROR
+        && downloadedKeys.contains(SongStore.keyFor(chart));
+    if (alreadyInLibrary) {
+      Snackbar.show(this, getString(R.string.already_in_library_fmt, chart.name),
+          getString(R.string.download_again_action), () -> beginDownload(pos, chart, adapter));
+      return;
+    }
+
+    beginDownload(pos, chart, adapter);
+  }
+
+  private void beginDownload(int pos, Chart chart, ResultsAdapter adapter) {
     adapter.setState(pos, ResultsAdapter.DownloadState.DOWNLOADING, -1);
     DownloadHelper.start(this, chart, new DownloadHelper.Callback() {
       @Override public void onProgress(int percent) {
@@ -556,9 +576,8 @@ public class MainActivity extends Activity {
       }
       @Override public void onDone(File placed) {
         adapter.setState(pos, ResultsAdapter.DownloadState.DONE, 100);
-        Toast.makeText(MainActivity.this,
-            "Added: " + chart.name + " · Scan your library in Clone Hero",
-            Toast.LENGTH_LONG).show();
+        Snackbar.show(MainActivity.this,
+            getString(R.string.download_done_fmt, chart.name) + " · " + getString(R.string.scan_hint));
         // The library folder just changed — refresh the "already
         // downloaded" cross-ref (task-search-screen-features) so other
         // rows for the same chart (e.g. a duplicate further down the
@@ -613,5 +632,18 @@ public class MainActivity extends Activity {
 
   private int dp(int v) {
     return Math.round(v * getResources().getDisplayMetrics().density);
+  }
+
+  /** Robustness (task B1): shuts down this screen's background executor
+   *  and its {@link ArtLoader}'s so a slow search/art request in flight
+   *  when the user leaves can't post back to (or crash touching) views
+   *  that no longer exist. {@link #onPageLoaded}/{@link
+   *  #onPageLoadFailure}/{@link #refreshDownloadedKeys}'s own
+   *  isFinishing()/isDestroyed() guards cover the narrow window between
+   *  a callback already being posted and this running. */
+  @Override protected void onDestroy() {
+    super.onDestroy();
+    executor.shutdownNow();
+    if (artLoader != null) artLoader.shutdown();
   }
 }

@@ -11,5 +11,26 @@
   <!-- App bar (DESIGN.md §7.1b) -->
   <string name="library_button_desc">Library</string>
   <string name="library_coming_soon">Library coming soon</string>
+
+  <!-- Snackbar / scan hint (DESIGN.md §7.8/§7.9) -->
+  <string name="download_done_fmt">✓ Added: %1$s</string>
+  <string name="scan_hint">Scan your library in Clone Hero to see new charts.</string>
+  <string name="download_again_action">DOWNLOAD AGAIN</string>
+  <string name="already_in_library_fmt">Already in your library: %1$s</string>
+
+  <!-- Permission screen (DESIGN.md §7.6) -->
+  <string name="permission_headline">Let Whammy reach your songs</string>
+  <string name="permission_body">Whammy needs all-files access to drop .sng charts into your Clone Hero songs folder. It only writes charts you download.</string>
+  <string name="permission_grant">Grant access</string>
+  <string name="permission_not_now">Not now</string>
+
+  <!-- Accessibility (icon-only controls) -->
+  <string name="search_clear_desc">Clear search</string>
+  <string name="back_button_desc">Back</string>
+  <string name="note_download_desc">Download chart</string>
+  <string name="note_in_library_desc">Already in your library. Tap to download again.</string>
+  <string name="note_downloading_desc">Downloading chart</string>
+  <string name="note_done_desc">Download complete</string>
+  <string name="note_retry_desc">Download failed. Tap to retry.</string>
 </resources>
 

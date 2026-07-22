@@ -147,6 +147,15 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
     notifyItemChanged(pos);
   }
 
+  /** Current download state of row {@code pos} (IDLE if never set) --
+   *  used by the host to decide whether a tap needs a duplicate-download
+   *  confirm (task B1 robustness: never gate a genuine ERROR-state retry
+   *  behind that confirm). */
+  public DownloadState stateOf(int pos) {
+    DownloadState s = states[pos];
+    return s == null ? DownloadState.IDLE : s;
+  }
+
   /**
    * Infinite-scroll pagination append: adds {@code more} to the end of the
    * backing list and grows the parallel {@link #states}/{@link #percents}
@@ -198,6 +207,7 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
         h.noteButton.setBackgroundTintList(null);
         h.noteIcon.setImageResource(R.drawable.ic_check);
         h.noteIcon.setImageTintList(ColorStateList.valueOf(ctx.getColor(R.color.on_accent)));
+        h.noteButton.setContentDescription(ctx.getString(R.string.note_done_desc));
         break;
 
       case ERROR:
@@ -207,6 +217,7 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
         h.noteButton.setBackgroundTintList(null);
         h.noteIcon.setImageResource(R.drawable.ic_retry);
         h.noteIcon.setImageTintList(ColorStateList.valueOf(ctx.getColor(R.color.fret_red)));
+        h.noteButton.setContentDescription(ctx.getString(R.string.note_retry_desc));
         break;
 
       case DOWNLOADING:
@@ -220,6 +231,7 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
         h.progressRing.setPercent(percents[position]);
         h.noteButton.setBackgroundResource(R.drawable.note_ring);
         h.noteButton.setBackgroundTintList(null);
+        h.noteButton.setContentDescription(ctx.getString(R.string.note_downloading_desc));
         break;
 
       case IDLE:
@@ -237,9 +249,11 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
           // like any other IDLE row — only the icon/tint differ.
           h.noteIcon.setImageResource(R.drawable.ic_check);
           h.noteIcon.setImageTintList(ColorStateList.valueOf(ctx.getColor(R.color.fret_green)));
+          h.noteButton.setContentDescription(ctx.getString(R.string.note_in_library_desc));
         } else {
           h.noteIcon.setImageResource(R.drawable.ic_download);
           h.noteIcon.setImageTintList(ColorStateList.valueOf(ctx.getColor(R.color.star)));
+          h.noteButton.setContentDescription(ctx.getString(R.string.note_download_desc));
         }
         break;
     }

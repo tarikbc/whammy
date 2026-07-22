@@ -1,9 +1,12 @@
 package com.tarikbc.whammy;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Outline;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,10 +14,13 @@ import android.view.ViewOutlineProvider;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Song detail screen (DESIGN.md §7.13): opened by tapping a search
@@ -37,6 +43,21 @@ public class SongDetailActivity extends Activity {
    *  resolves; null while pending or unknown (§10: "omit the size"). */
   private String sizeLabel;
 
+  /** Background executor for the size (HEAD) and existing-library-keys
+   *  fetches this screen kicks off -- a single shared field (task B1
+   *  robustness) rather than ad-hoc {@code new Thread(...)} calls, so
+   *  {@link #onDestroy} has something concrete to shut down. */
+  private final ExecutorService executor = Executors.newCachedThreadPool();
+  private final Handler mainHandler = new Handler(Looper.getMainLooper());
+  private ArtLoader artLoader;
+
+  /** Normalized "already in your library" keys (task B1 robustness,
+   *  mirroring MainActivity#downloadedKeys), from {@link
+   *  SongStore#existingChartKeys()} -- computed once in {@link #onCreate}
+   *  and consulted by {@link #bindDownloadButton}'s tap handler to decide
+   *  whether a duplicate-download confirm is needed. */
+  private Set<String> existingKeys = Collections.emptySet();
+
   @Override protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_song_detail);
@@ -48,6 +69,8 @@ public class SongDetailActivity extends Activity {
       return;
     }
 
+    artLoader = new ArtLoader(this);
+
     findViewById(R.id.back_button).setOnClickListener(v -> finish());
 
     bindHero(chart);
@@ -56,6 +79,39 @@ public class SongDetailActivity extends Activity {
     bindBadges(chart);
     bindDescription(chart);
     bindDownloadButton();
+    refreshExistingKeys();
+  }
+
+  /** Recomputes {@link #existingKeys} from disk on the background executor
+   *  (mirrors MainActivity#refreshDownloadedKeys) -- run once up front in
+   *  {@link #onCreate} so the very first download tap already has an
+   *  answer, with no per-tap thread hop. */
+  private void refreshExistingKeys() {
+    executor.execute(() -> {
+      Set<String> keys = SongStore.existingChartKeys();
+      runOnUiThreadSafe(() -> existingKeys = keys);
+    });
+  }
+
+  /** Posts {@code r} to the main thread, but only runs it once there if
+   *  this activity is still alive -- guards every background callback
+   *  that touches views (size fetch, existing-keys fetch) against
+   *  finishing after the user has already left this screen. */
+  private void runOnUiThreadSafe(Runnable r) {
+    mainHandler.post(() -> {
+      if (isFinishing() || isDestroyed()) return;
+      r.run();
+    });
+  }
+
+  /** Robustness (task B1): shuts down this screen's background executor
+   *  and its {@link ArtLoader} so a slow size/art/existing-keys request
+   *  in flight when the user leaves can't post back to (or crash
+   *  touching) views that no longer exist. */
+  @Override protected void onDestroy() {
+    super.onDestroy();
+    executor.shutdownNow();
+    if (artLoader != null) artLoader.shutdown();
   }
 
   /** Hero header: 112dp cover (ArtLoader, r_md clip), title, artist,
@@ -70,7 +126,7 @@ public class SongDetailActivity extends Activity {
       }
     });
     heroArt.setClipToOutline(true);
-    new ArtLoader(this).load(heroArt, chart.albumArtMd5);
+    artLoader.load(heroArt, chart.albumArtMd5);
 
     ((TextView) findViewById(R.id.song_title)).setText(chart.name);
     ((TextView) findViewById(R.id.song_artist)).setText(chart.artist);
@@ -205,49 +261,61 @@ public class SongDetailActivity extends Activity {
       if (dlState == DlState.DOWNLOADING) return; // ignore taps mid-flight
 
       if (!Permissions.hasAllFiles()) {
-        Toast.makeText(this,
-            "Whammy needs storage access to save charts — opening settings…",
-            Toast.LENGTH_LONG).show();
-        Permissions.requestAllFiles(this);
+        startActivity(new Intent(this, PermissionActivity.class));
         return;
       }
 
-      dlState = DlState.DOWNLOADING;
-      dlPercent = -1;
-      updateDownloadButtonLabel(downloadButton);
+      // Duplicate handling (task B1 robustness, mirrors MainActivity):
+      // never gate a genuine ERROR-state retry behind this confirm --
+      // that download never actually made it into the library.
+      boolean alreadyInLibrary = dlState != DlState.ERROR
+          && existingKeys.contains(SongStore.keyFor(chart));
+      if (alreadyInLibrary) {
+        Snackbar.show(this, getString(R.string.already_in_library_fmt, chart.name),
+            getString(R.string.download_again_action), () -> beginDownload(downloadButton));
+        return;
+      }
 
-      DownloadHelper.start(this, chart, new DownloadHelper.Callback() {
-        @Override public void onProgress(int percent) {
-          dlPercent = percent;
-          updateDownloadButtonLabel(downloadButton);
-        }
-        @Override public void onDone(java.io.File placed) {
-          dlState = DlState.DONE;
-          updateDownloadButtonLabel(downloadButton);
-          Toast.makeText(SongDetailActivity.this,
-              "Added: " + chart.name + " · Scan your library in Clone Hero",
-              Toast.LENGTH_LONG).show();
-        }
-        @Override public void onError(Exception e) {
-          dlState = DlState.ERROR;
-          updateDownloadButtonLabel(downloadButton);
-        }
-      });
+      beginDownload(downloadButton);
     });
 
     fetchSize(downloadButton);
   }
 
-  /** HEAD-requests the .sng's byte size on a background thread; -1/failure
-   *  is handled by simply leaving {@link #sizeLabel} null (no size shown). */
+  private void beginDownload(TextView downloadButton) {
+    dlState = DlState.DOWNLOADING;
+    dlPercent = -1;
+    updateDownloadButtonLabel(downloadButton);
+
+    DownloadHelper.start(this, chart, new DownloadHelper.Callback() {
+      @Override public void onProgress(int percent) {
+        dlPercent = percent;
+        updateDownloadButtonLabel(downloadButton);
+      }
+      @Override public void onDone(java.io.File placed) {
+        dlState = DlState.DONE;
+        updateDownloadButtonLabel(downloadButton);
+        Snackbar.show(SongDetailActivity.this,
+            getString(R.string.download_done_fmt, chart.name) + " · " + getString(R.string.scan_hint));
+      }
+      @Override public void onError(Exception e) {
+        dlState = DlState.ERROR;
+        updateDownloadButtonLabel(downloadButton);
+      }
+    });
+  }
+
+  /** HEAD-requests the .sng's byte size on the background executor;
+   *  -1/failure is handled by simply leaving {@link #sizeLabel} null (no
+   *  size shown). */
   private void fetchSize(TextView downloadButton) {
-    new Thread(() -> {
+    executor.execute(() -> {
       long bytes = EncoreApi.contentLength(chart.md5);
-      runOnUiThread(() -> {
+      runOnUiThreadSafe(() -> {
         if (bytes > 0) sizeLabel = LibraryAdapter.formatBytes(bytes);
         updateDownloadButtonLabel(downloadButton);
       });
-    }).start();
+    });
   }
 
   /** Renders the button label for the current {@link #dlState}, folding

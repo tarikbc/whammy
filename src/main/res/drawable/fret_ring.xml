@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Fret-spectrum ring (DESIGN.md §7.6): "the five frets sweep around the
+  ring" for the permission screen's icon. A plain <shape> stroke can
+  only be one solid color, and XML <gradient type="sweep"> isn't safe
+  pre-API 29 (this app's minSdk is 26), so the ring is five literal
+  72°-arc <path> segments instead, one per fret color in order
+  (green/red/yellow/blue/orange), which is both a truer read of "frets
+  sweep around the ring" and safe on every supported API level.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="128dp"
+    android:height="128dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+  <path
+      android:pathData="M50,10 A40,40 0 0,1 88.04,37.64"
+      android:strokeColor="@color/fret_green"
+      android:strokeWidth="5"
+      android:strokeLineCap="round"
+      android:fillColor="#00000000" />
+  <path
+      android:pathData="M88.04,37.64 A40,40 0 0,1 73.51,82.36"
+      android:strokeColor="@color/fret_red"
+      android:strokeWidth="5"
+      android:strokeLineCap="round"
+      android:fillColor="#00000000" />
+  <path
+      android:pathData="M73.51,82.36 A40,40 0 0,1 26.49,82.36"
+      android:strokeColor="@color/fret_yellow"
+      android:strokeWidth="5"
+      android:strokeLineCap="round"
+      android:fillColor="#00000000" />
+  <path
+      android:pathData="M26.49,82.36 A40,40 0 0,1 11.96,37.64"
+      android:strokeColor="@color/fret_blue"
+      android:strokeWidth="5"
+      android:strokeLineCap="round"
+      android:fillColor="#00000000" />
+  <path
+      android:pathData="M11.96,37.64 A40,40 0 0,1 50,10"
+      android:strokeColor="@color/fret_orange"
+      android:strokeWidth="5"
+      android:strokeLineCap="round"
+      android:fillColor="#00000000" />
+</vector>

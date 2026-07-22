@@ -111,25 +111,107 @@ public class EncoreApi {
         }
     }
 
+    /**
+     * Downloads {@code md5}'s .sng to {@code dest.part}, RESUMING a prior
+     * partial download rather than restarting it: if {@code dest.part}
+     * already exists with size S&gt;0 (e.g. left behind by a dropped
+     * connection or a caller-thrown exception on an earlier attempt --
+     * see {@link DownloadHelper}, which never deletes it), sends
+     * {@code Range: bytes=S-}. {@code files.enchor.us} supports range
+     * requests (verified: {@code accept-ranges: bytes}), so a healthy
+     * server answers with HTTP 206 and only the remaining bytes, which are
+     * appended to the existing {@code .part} rather than overwriting it.
+     * A server that ignores the range (200 -- sends the whole file from
+     * byte 0 again) or that rejects it outright (416 -- the local partial
+     * no longer matches, e.g. the remote file changed) instead restarts
+     * cleanly: the {@code .part} is truncated (200) or dropped and
+     * re-requested once more with no {@code Range} header at all (416).
+     * Progress percentages account for the already-downloaded bytes on a
+     * resume, so a resumed download doesn't visually restart from 0%.
+     * Renames {@code dest.part} to {@code dest} on success, same as
+     * before.
+     */
     public static void downloadSng(String md5, File dest, ProgressListener cb) throws IOException {
-        HttpURLConnection c = (HttpURLConnection) new URL(fileUrl(md5)).openConnection();
-        c.setConnectTimeout(15000); c.setReadTimeout(60000);
-        c.setRequestProperty("User-Agent", "Whammy/1.0");
-        try {
-            int code = c.getResponseCode();
-            if (code != 200) throw new IOException("download http " + code);
-            int total = c.getContentLength();
-            File part = new File(dest.getPath() + ".part");
-            try (InputStream in = c.getInputStream(); OutputStream out = new FileOutputStream(part)) {
-                byte[] buf = new byte[8192]; int n; long got = 0;
-                while ((n = in.read(buf)) != -1) {
-                    out.write(buf, 0, n); got += n;
-                    if (cb != null) cb.onProgress(total > 0 ? (int)(got * 100 / total) : -1);
+        File part = new File(dest.getPath() + ".part");
+        for (int attempt = 0; attempt < 2; attempt++) {
+            long existingBytes = part.exists() ? part.length() : 0;
+            HttpURLConnection c = (HttpURLConnection) new URL(fileUrl(md5)).openConnection();
+            c.setConnectTimeout(15000); c.setReadTimeout(60000);
+            c.setRequestProperty("User-Agent", "Whammy/1.0");
+            if (existingBytes > 0) c.setRequestProperty("Range", "bytes=" + existingBytes + "-");
+            try {
+                int code = c.getResponseCode();
+                if (code != 200 && code != 206 && code != 416) {
+                    throw new IOException("download http " + code);
                 }
+
+                ResumeDecision decision = decideResume(code, existingBytes, c.getContentLength());
+                if (decision == null) {
+                    // 416: the local .part is stale for this range (e.g. the
+                    // remote file's size changed) -- drop it and retry once
+                    // more with no Range header at all.
+                    part.delete();
+                    c.disconnect();
+                    continue;
+                }
+
+                long got = decision.append ? existingBytes : 0;
+                try (InputStream in = c.getInputStream();
+                     OutputStream out = new FileOutputStream(part, decision.append)) {
+                    byte[] buf = new byte[8192]; int n;
+                    while ((n = in.read(buf)) != -1) {
+                        out.write(buf, 0, n); got += n;
+                        if (cb != null) cb.onProgress(decision.total > 0 ? (int) (got * 100 / decision.total) : -1);
+                    }
+                }
+                if (!part.renameTo(dest)) { copy(part, dest); part.delete(); }
+                return;
+            } finally {
+                c.disconnect();
             }
-            if (!part.renameTo(dest)) { copy(part, dest); part.delete(); }
-        } finally {
-            c.disconnect();
+        }
+        throw new IOException("download failed: server returned 416 for a fresh (no-Range) request");
+    }
+
+    /**
+     * Pure resume-decision logic, factored out of {@link #downloadSng} so
+     * it's exercisable from a JVM test without any real HTTP traffic:
+     * given the HTTP response {@code code} for the (possibly range-'d)
+     * request, how many bytes of a {@code .part} file already existed
+     * locally before this request, and this response's own {@code
+     * Content-Length} ({@code -1} = unknown, exactly what {@link
+     * HttpURLConnection#getContentLength()} returns), decides whether the
+     * response should be treated as a genuine RESUME (append to the
+     * existing bytes) or a fresh/restarted download (truncate), and what
+     * the resulting file's total size is (so progress percentages come
+     * out right even mid-resume). Returns {@code null} for a 416 -- the
+     * caller must drop the stale {@code .part} and retry the whole
+     * request with no {@code Range} header.
+     *
+     * @param code HTTP response code; must be 200, 206, or 416.
+     */
+    static ResumeDecision decideResume(int code, long existingBytes, int contentLength) {
+        if (code == 416) return null;
+        if (code != 200 && code != 206) {
+            throw new IllegalArgumentException("decideResume expects 200/206/416, got " + code);
+        }
+        // A 206 only means a genuine resume when we actually asked for one
+        // (existingBytes > 0) -- a byte-0-only request oddly reporting 206
+        // would still just be "the whole file", so still don't append.
+        boolean append = code == 206 && existingBytes > 0;
+        int total = contentLength < 0 ? -1 : (append ? (int) (contentLength + existingBytes) : contentLength);
+        return new ResumeDecision(append, total);
+    }
+
+    /** @see #decideResume */
+    static final class ResumeDecision {
+        /** Whether to append to the existing {@code .part} (true) or truncate/start clean (false). */
+        final boolean append;
+        /** Total expected file size once complete, or -1 if unknown. */
+        final int total;
+        ResumeDecision(boolean append, int total) {
+            this.append = append;
+            this.total = total;
         }
     }
 

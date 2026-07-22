@@ -43,7 +43,7 @@
           android:background="?android:attr/selectableItemBackgroundBorderless"
           android:clickable="true"
           android:focusable="true"
-          android:contentDescription="Back" />
+          android:contentDescription="@string/back_button_desc" />
 
       <!-- Hero header (DESIGN.md §7.13): 112dp cover, r_md, edge_hair . -->
       <LinearLayout

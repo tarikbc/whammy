@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Reusable snackbar (DESIGN.md §7.8): a `surface_top` card with a 3dp
+  `star` accent bar on the left edge and an optional UPPER action label
+  in `star`. Inflated by Snackbar.java (attachToRoot=false) into the
+  host activity's own content FrameLayout (android.R.id.content), so
+  this root's own layout_gravity="bottom" + margins below are exactly
+  what position/size the card once Snackbar.show() adds it as a child.
+
+  Snackbar.java installs a matching r_md ViewOutlineProvider +
+  clipToOutline on this root at runtime (same corner-box-fix technique
+  ResultsAdapter/LibraryAdapter use for their rows) so the straight-edged
+  accent bar below never pokes out past the card's rounded corners.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom"
+    android:layout_marginStart="@dimen/space_16"
+    android:layout_marginEnd="@dimen/space_16"
+    android:layout_marginBottom="@dimen/space_16"
+    android:background="@drawable/bg_snackbar"
+    android:elevation="6dp">
+
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:minHeight="48dp"
+      android:orientation="horizontal">
+
+    <!-- 3dp `star` accent bar (DESIGN.md §7.8: "the interactive-action rule"). -->
+    <View
+        android:layout_width="3dp"
+        android:layout_height="match_parent"
+        android:background="@color/star" />
+
+    <TextView
+        android:id="@+id/snackbar_label"
+        style="@style/Text.Snackbar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_gravity="center_vertical"
+        android:paddingStart="@dimen/space_12"
+        android:paddingEnd="@dimen/space_8"
+        android:paddingTop="@dimen/space_12"
+        android:paddingBottom="@dimen/space_12" />
+
+    <!-- Optional action (e.g. "DOWNLOAD AGAIN"): star, SemiBold, +2%
+         UPPER (DESIGN.md §7.8). GONE unless Snackbar.show() is given an
+         action label + handler. -->
+    <TextView
+        android:id="@+id/snackbar_action"
+        android:fontFamily="@font/archivo_semibold"
+        android:textSize="13sp"
+        android:textColor="@color/star"
+        android:letterSpacing="0.02"
+        android:textAllCaps="true"
+        android:includeFontPadding="false"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:paddingStart="@dimen/space_8"
+        android:paddingEnd="@dimen/space_16"
+        android:paddingTop="@dimen/space_12"
+        android:paddingBottom="@dimen/space_12"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone" />
+  </LinearLayout>
+</FrameLayout>

@@ -15,8 +15,20 @@ import java.util.concurrent.Executors;
  *
  * Downloads to {@code <cacheDir>/<md5>.sng.tmp}, then hands the temp file to
  * {@link SongStore#place} to be moved+renamed into the real Songs folder.
- * On any failure the temp file is deleted before {@link Callback#onError}
- * fires. All callback methods are invoked on the main thread.
+ * On a failure that happens AFTER a successful download (i.e. {@link
+ * SongStore#place} itself throws), the fully-downloaded temp file is
+ * deleted before {@link Callback#onError} fires. A failure DURING the
+ * download itself is deliberately left alone: {@link EncoreApi#downloadSng}
+ * writes to a sibling {@code .part} file keyed by the same deterministic
+ * {@code md5}-based path, and leaves it in place on failure so a later
+ * retry for the same chart (same {@code activity.getCacheDir()}, same
+ * {@code md5}) resumes from where it left off instead of restarting.
+ *
+ * <p>All callback methods are invoked on the main thread, and only if
+ * {@code activity} is still alive at that point ({@code
+ * !isFinishing() && !isDestroyed()}) -- a download that finishes after
+ * the user has already left the screen simply never calls back, rather
+ * than touching views on a dead activity.
  */
 public class DownloadHelper {
   private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
@@ -44,14 +56,25 @@ public class DownloadHelper {
     EXECUTOR.execute(() -> {
       try {
         EncoreApi.downloadSng(chart.md5, tmp,
-            percent -> main.post(() -> cb.onProgress(percent)));
+            percent -> postIfAlive(main, activity, () -> cb.onProgress(percent)));
         File placed = SongStore.place(tmp, chart);
-        main.post(() -> cb.onDone(placed));
+        postIfAlive(main, activity, () -> cb.onDone(placed));
       } catch (Exception e) {
         tmp.delete();
-        main.post(() -> cb.onError(e));
+        postIfAlive(main, activity, () -> cb.onError(e));
       }
     });
     return true;
+  }
+
+  /** Posts {@code r} to the main thread, but only runs it once there if
+   *  {@code activity} is still alive -- guards every callback that
+   *  touches views (progress, done, error) against a download that
+   *  finishes after the user has already left the screen. */
+  private static void postIfAlive(Handler main, Activity activity, Runnable r) {
+    main.post(() -> {
+      if (activity.isFinishing() || activity.isDestroyed()) return;
+      r.run();
+    });
   }
 }

@@ -147,6 +147,16 @@ public class ArtLoader {
     }
   }
 
+  /**
+   * Shuts down this loader's background executor -- called by the owning
+   * activity's {@code onDestroy} so no further art fetch/decode work runs
+   * (or posts a bitmap back to a dead activity's views) after the screen
+   * is gone. This {@link ArtLoader} instance is unusable afterward.
+   */
+  public void shutdown() {
+    executor.shutdownNow();
+  }
+
   private byte[] download(String url) {
     HttpURLConnection c = null;
     try {

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Soft "bloom" behind the permission screen's folder-down + fret-ring
+  icon (DESIGN.md §7.6: "softly bloomed"): a faint `star`-tinted radial
+  glow, largest at the center and fully transparent by the edge.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+  <gradient
+      android:type="radial"
+      android:gradientRadius="64dp"
+      android:centerX="0.5"
+      android:centerY="0.5"
+      android:startColor="#2635E6E1"
+      android:endColor="#0035E6E1" />
+</shape>

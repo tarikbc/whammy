@@ -245,6 +245,53 @@ class EncoreApiTest {
         assertTrue(c.isSetlist());   // isPack ⇒ setlist
     }
 
+    // --- downloadSng resume/retry decision logic (task B1 robustness) ---
+    // downloadSng itself hits a hardcoded https:// URL via HttpURLConnection
+    // with no injectable transport seam, so exercising the real 206/200/416
+    // HTTP branches would need a live or local test server -- not worth the
+    // fixture infra here. decideResume() is the pure, side-effect-free
+    // decision at the heart of that logic (given a response code + how many
+    // bytes already existed locally + this response's own Content-Length,
+    // should we append or truncate, and what's the resulting total?), so
+    // it's exercised directly instead.
+    @Test void decideResume_206WithExistingBytes_isAResumeThatAppends() {
+        EncoreApi.ResumeDecision d = EncoreApi.decideResume(206, 1000, 500);
+        assertTrue(d.append);
+        assertEquals(1500, d.total); // existing 1000 + this response's remaining 500
+    }
+    @Test void decideResume_200IgnoringExistingBytes_restartsCleanly() {
+        // Server answered 200 (ignored our Range header) even though we
+        // had a partial .part on disk -- must NOT append, since the
+        // response body is the whole file from byte 0 again.
+        EncoreApi.ResumeDecision d = EncoreApi.decideResume(200, 1000, 1500);
+        assertFalse(d.append);
+        assertEquals(1500, d.total);
+    }
+    @Test void decideResume_200FreshDownloadNoExistingBytes_isNotAResume() {
+        EncoreApi.ResumeDecision d = EncoreApi.decideResume(200, 0, 2000);
+        assertFalse(d.append);
+        assertEquals(2000, d.total);
+    }
+    @Test void decideResume_206ButNoExistingBytes_stillDoesNotAppend() {
+        // Defensive: a 206 is only a genuine resume when we actually asked
+        // for one; if there was nothing on disk, treat it like a fresh file.
+        EncoreApi.ResumeDecision d = EncoreApi.decideResume(206, 0, 2000);
+        assertFalse(d.append);
+        assertEquals(2000, d.total);
+    }
+    @Test void decideResume_unknownContentLengthStaysUnknown() {
+        EncoreApi.ResumeDecision d = EncoreApi.decideResume(200, 0, -1);
+        assertEquals(-1, d.total);
+        EncoreApi.ResumeDecision resumed = EncoreApi.decideResume(206, 1000, -1);
+        assertEquals(-1, resumed.total);
+    }
+    @Test void decideResume_416SignalsCallerMustRestartWithNoRange() {
+        assertNull(EncoreApi.decideResume(416, 1000, 0));
+    }
+    @Test void decideResume_rejectsUnexpectedHttpCodes() {
+        assertThrows(IllegalArgumentException.class, () -> EncoreApi.decideResume(500, 0, 100));
+    }
+
     @Test void chart_isSetlist_detectsByNameWhenNotFlaggedPack() {
         JSONObject o = new JSONObject();
         o.put("name", "Children of Bodom Endless Setlist");

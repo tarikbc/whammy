@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Permission rationale screen (DESIGN.md §7.6): shown by MainActivity /
+  SongDetailActivity instead of jumping straight to system settings when
+  a download is attempted without all-files access. Theme.Whammy already
+  supplies the layered stage background via android:windowBackground, so
+  this root paints nothing of its own (same convention as
+  activity_song_detail.xml / activity_library.xml).
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_gravity="center"
+      android:orientation="vertical"
+      android:gravity="center_horizontal"
+      android:paddingStart="@dimen/screen_padding_h"
+      android:paddingEnd="@dimen/screen_padding_h">
+
+    <!-- Centered folder-with-down-arrow icon inside a softly-bloomed
+         fret-spectrum ring (DESIGN.md §7.6/§7.7). -->
+    <FrameLayout
+        android:layout_width="128dp"
+        android:layout_height="128dp">
+
+      <View
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          android:background="@drawable/bg_permission_bloom" />
+
+      <ImageView
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          android:src="@drawable/fret_ring"
+          android:importantForAccessibility="no" />
+
+      <ImageView
+          android:layout_width="40dp"
+          android:layout_height="40dp"
+          android:layout_gravity="center"
+          android:src="@drawable/ic_folder_down"
+          android:tint="@color/text_hi"
+          android:importantForAccessibility="no" />
+    </FrameLayout>
+
+    <!-- Headline (DESIGN.md §7.6): Archivo Expanded SemiBold 24sp. No
+         matching styles.xml entry exists at this exact size (values/
+         belongs to another agent), so set inline — same convention
+         activity_song_detail.xml / activity_library.xml use for their
+         own headline-scale text. -->
+    <!-- TODO promote to styles.xml (Text.PermissionHeadline) -->
+    <TextView
+        android:fontFamily="@font/archivo_expanded_semibold"
+        android:textSize="24sp"
+        android:textColor="@color/text_hi"
+        android:letterSpacing="-0.01"
+        android:lineSpacingMultiplier="1.15"
+        android:includeFontPadding="false"
+        android:gravity="center"
+        android:layout_marginTop="@dimen/space_24"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/permission_headline" />
+
+    <!-- Body: Archivo Regular 15sp `text` — Text.Body already matches
+         DESIGN.md §7.6's spec for this exactly. -->
+    <TextView
+        style="@style/Text.Body"
+        android:gravity="center"
+        android:layout_marginTop="@dimen/space_12"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/permission_body" />
+
+    <!-- Primary button (DESIGN.md §7.6): filled `star`, glass sheen,
+         `on_accent` label, r_md, full-width, 54dp — the exact same
+         bg_button_primary/Text.Button/primary_button_height combo the
+         detail screen's Download CTA uses. -->
+    <TextView
+        android:id="@+id/grant_button"
+        style="@style/Text.Button"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/primary_button_height"
+        android:layout_marginTop="@dimen/space_32"
+        android:gravity="center"
+        android:background="@drawable/bg_button_primary"
+        android:clickable="true"
+        android:focusable="true"
+        android:text="@string/permission_grant" />
+
+    <!-- Secondary: plain text button, `text_lo` (DESIGN.md §7.6). -->
+    <TextView
+        android:id="@+id/not_now_button"
+        android:fontFamily="@font/archivo_semibold"
+        android:textSize="15sp"
+        android:textColor="@color/text_lo"
+        android:includeFontPadding="false"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_16"
+        android:padding="@dimen/space_8"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:text="@string/permission_not_now" />
+
+  </LinearLayout>
+</FrameLayout>

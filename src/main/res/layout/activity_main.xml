@@ -83,7 +83,8 @@
         android:tint="@color/text_lo"
         android:visibility="gone"
         android:clickable="true"
-        android:focusable="true" />
+        android:focusable="true"
+        android:contentDescription="@string/search_clear_desc" />
   </LinearLayout>
 
   <!-- Filter chip rail (DESIGN.md §7.11): instrument single-select
