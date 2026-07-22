@@ -20,11 +20,11 @@ The five fret colors are the accent language, but they are given a **job** rathe
 
 | Role | Colors | Where it lives |
 |---|---|---|
-| **Identity** (resting) | Fret rainbow — green/red/yellow/blue/orange | One color per result row by `position % 5`: the row's left lane-light and its idle download note. |
-| **Action** (in-flight) | Star-power cyan → blue | The one interactive accent: search focus, the download progress ring, the strike line, the snackbar edge. |
+| **Identity** (resting) | Fret rainbow — green/red/yellow/blue/orange | The **app icon** and brand mark. Result rows lead with **album art** instead — cover art is the per-row identity; the fret rainbow is the app's signature, not a per-row stripe. |
+| **Action** (in-flight) | Star-power cyan → blue | The one interactive accent: search focus, the idle + downloading download button, the strike line, the snackbar edge. |
 | **Resolved** (outcome) | Green (done) / red (error) | Reuses the green & red frets, so the palette stays tight. |
 
-So the eye reads a calm, dark highway with a repeating run of fret lane-lights (identity); exactly one cyan thing is "happening" at a time (action); finished rows settle into green. **Bold in one place, quiet everywhere else.**
+So the eye reads a calm, dark highway of album-art rows; exactly one cyan thing is "happening" at a time (action); finished rows settle into green. **Bold in one place, quiet everywhere else.**
 
 **What makes it flagship, not indie:** light that reads as *emitted* (layered surfaces, three-layer glow with soft falloff, a whisper of film grain so the dark is never a flat void), generous negative space, one clear hero moment per screen, and tactile, rewarding components. Restraint is the luxury.
 
@@ -190,8 +190,8 @@ The search field and primary button carry a faint top-to-bottom **sheen**: a 1px
 - Row: padding **16dp** vertical / **18dp** horizontal; **row gap 12dp**.
 - Title → artist gap: **4dp**.
 - Radii: `r_sm 12` (chips), `r_md 16` (search field, buttons, snackbar), `r_lg 20` (rows, dialogs), note button + gems = **full circle**. Keep radii unified — no stray values.
-- Sizes: result row **min 78dp**; note button **48dp**; lane-light **3dp** wide, inset 14dp top/bottom; search field **54dp**; primary button **54dp**.
-- Optical alignment: the lane-light, title baseline, and note-button center form a clean vertical rhythm; icons are optically centered (not metric-centered) in their touch targets.
+- Sizes: result row **min 78dp**; note button **48dp**; album-art thumbnail **56dp** (`r_sm` 12dp, `edge_hair` outline); search field **54dp**; primary button **54dp**.
+- Optical alignment: the album thumbnail, title baseline, and note-button center form a clean vertical rhythm; icons are optically centered (not metric-centered) in their touch targets.
 
 ---
 
@@ -208,30 +208,30 @@ The search field and primary button carry a faint top-to-bottom **sheen**: a 1px
 - **Focus:** 1.5dp `star` stroke + the three-layer cyan glow (§5.2). Placeholder/label transitions with `ease_standard`.
 - **Strike line:** directly beneath, a 2dp rule — a horizontal gradient `transparent → star → transparent` carrying a faint fret-spectrum tint at its center, with cyan bloom. On focus it brightens and a single cyan highlight **sweeps** left→right (`420ms`, `ease_emphasized`). This is where results "strike" and cascade from.
 
-### 7.3 Result row — a note on the highway
+### 7.3 Result row — album art on the highway
 ```
 ┌──────────────────────────────────────────────────────────┐
-│ ▍   SULTANS OF SWING                              ( ↓ )    │
-│ ▍   Dire Straits  ·  CHARTED BY HARMONIX                   │
+│ ┌────┐  SULTANS OF SWING                          ( ↓ )    │
+│ │ ▓▓ │  Dire Straits  ·  CHARTED BY HARMONIX               │
+│ └────┘                                                     │
 └──────────────────────────────────────────────────────────┘
-  ▲    ▲                                             ▲
-  lane title (Archivo SemiBold)                      note button
-  (fret color, 3-layer glow)
+   ▲                                                  ▲
+   album art (rounded thumbnail)                      note button
 ```
-- Background `surface`, `r_lg` 20dp, `edge_top` highlight + `edge_hair` outline, faint `edge_shadow` beneath.
-- **Lane-light:** 3dp rounded bar, color = `position % 5`, with the three-layer glow in its own color and a subtle vertical fade (brighter at top). This is the row's identity.
+- Background `surface`, `r_lg` 20dp, `edge_top` highlight + `edge_hair` outline, faint `edge_shadow` beneath. **The rounded background must clip cleanly — no square corner box may show behind the radius.**
+- **Album art:** a **56dp rounded square** (`r_sm` 12dp) leading the row, `edge_hair` hairline outline. Source: `https://files.enchor.us/{albumArtMd5}.jpg` (from the search result's `albumArtMd5`), loaded async and memory-cached; center-cropped. **Placeholder** while loading / on missing art or fetch failure: a `surface_hi` tile bearing a small centered `text_lo` W-dive (or music-note) glyph — never a broken-image or empty box. This replaces the old fret lane-light: **rows lead with cover art; the fret palette now lives on the app icon and in the note-hit accents, not per-row.**
 - **Title:** Archivo SemiBold 17sp `text_hi`, ellipsized.
-- **Meta:** artist (Archivo Regular 14sp `text`) · charter tag (`CHARTED BY XXX`, Archivo Medium 11sp +6% `text_lo`).
+- **Meta:** artist · charter tag rendered as **one line that ellipsizes as a unit** (artist Archivo Regular 14sp `text`, `·`, then `CHARTED BY XXX` Archivo Medium 11sp +6% `text_lo`) — a long artist name must ellipsize the whole meta line, never hard-clip or squeeze the charter tag to zero width.
 - **Right:** the note button (7.4).
-- **Press (whole row):** scale 0.985 + `surface_hi` lift + a fret-tinted ripple, `dur_1` `ease_standard`.
+- **Press (whole row):** scale 0.985 + `surface_hi` lift + a soft `star`-tinted ripple, `dur_1` `ease_standard`.
 
 ### 7.4 Download button — the note you strum (all states)
-A 48dp circle, the most tactile element. Color follows identity → action → resolved.
+A 48dp circle, the most tactile element. One consistent accent (no per-row fret color): idle uses the `star` action accent, resolving to green (done) / red (error).
 
 | State | Look | Motion / easing |
 |---|---|---|
-| **Idle** | Hollow 2dp ring in the **row's fret color**, three-layer glow, a down-chevron glyph. | Gentle idle glow breathe: ambient layer alpha 0.6↔1 over 3s `ease-in-out`. Reduced-motion: static. |
-| **Press (strum)** | Ring compresses; glow intensifies. | Scale 1→0.92, `90ms` `ease_standard`; a radial **pluck** ripple in the fret color expands out and fades (`240ms` `ease_emphasized`). |
+| **Idle** | Hollow 2dp ring in **`star`** (the action accent), three-layer cyan glow, a down-chevron glyph. | Gentle idle glow breathe: ambient layer alpha 0.6↔1 over 3s `ease-in-out`. Reduced-motion: static. |
+| **Press (strum)** | Ring compresses; glow intensifies. | Scale 1→0.92, `90ms` `ease_standard`; a radial **pluck** ripple in `star` expands out and fades (`240ms` `ease_emphasized`). |
 | **Downloading** | Ring becomes a determinate **cyan→blue sweep arc** (`star → star_deep`) from 12 o'clock; faint `edge_hair` track ring behind. Center shows `%` (Archivo SemiBold tabular, `star`). A slow shimmer rotates on the arc. | Arc advances per tick with `ease_emphasized`; cyan bloom breathes softly. Indeterminate = a 90° arc rotating at constant speed. |
 | **Done ✓** | Arc snaps to a **filled `fret_green` disc** with a check (`on_accent`). | **The note hit:** button overshoots 1→1.14→1 (`420ms`, spring/`ease_emphasized`); a green radial **bloom** scales 0.6→1.6 and fades (`420ms` `ease_emphasized`); a `star` ring **ripple** expands past the button and fades. Optional light haptic. |
 | **Error** | Ring turns `fret_red`, glyph becomes a **retry** (circular arrow); meta line appends `Download failed · tap to retry` in `fret_red`. | Horizontal **shake** ±3px, 2 cycles, `110ms` `ease_exit`. Tap → back to Downloading. |
