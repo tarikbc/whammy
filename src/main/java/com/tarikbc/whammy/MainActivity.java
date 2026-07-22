@@ -1,6 +1,7 @@
 package com.tarikbc.whammy;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.text.Editable;
@@ -14,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
+import org.json.JSONObject;
 
 public class MainActivity extends Activity {
   @Override protected void onCreate(Bundle s) {
@@ -62,9 +64,15 @@ public class MainActivity extends Activity {
     // States IDLE/DOWNLOADING(63)/DONE/ERROR/IDLE/IDLE mirror
     // mockup/search-screen.html.
     List<Chart> fake = new ArrayList<>();
-    // row 0 IDLE — has VIDEO badge
-    fake.add(new Chart("m0", "Guitar Hero", "Khary", "BUNHEAD", "88e679b8f7f4d385de554a384786e7e1",
-        java.util.Arrays.asList("guitar"), true, 251624, false, false));
+    // row 0 IDLE — rich chart via fromJson so the detail screen shows
+    // difficulty meters + album·year·genre + extra feature badges.
+    fake.add(demoChart("{\"md5\":\"m0\",\"name\":\"Guitar Hero\",\"artist\":\"Khary\","
+        + "\"charter\":\"BUNHEAD\",\"albumArtMd5\":\"88e679b8f7f4d385de554a384786e7e1\","
+        + "\"album\":\"Intern Ache\",\"year\":\"2019\",\"genre\":\"Hip Hop\","
+        + "\"hasVideoBackground\":true,\"song_length\":251624,"
+        + "\"diff_guitar\":3,\"diff_bass\":2,\"diff_drums\":4,"
+        + "\"notesData\":{\"instruments\":[\"guitar\",\"bass\",\"drums\"],"
+        + "\"hasLyrics\":true,\"hasSoloSections\":true}}"));
     // row 1 DOWNLOADING — guitar/bass/rhythm
     fake.add(new Chart("m1", "Joe Perry Guitar Battle (Co-op)", "Joe Perry", "Neversoft", "d1dc634bc90b064ed16fdcbfcb7969d0",
         java.util.Arrays.asList("guitar", "bass", "rhythm"), false, 249215, false, false));
@@ -82,6 +90,11 @@ public class MainActivity extends Activity {
         java.util.Arrays.asList("guitar"), false, 0, true, false));
 
     ResultsAdapter adapter = new ResultsAdapter(fake, artLoader);
+    // (demoChart helper is defined below)
+    // Whole-row tap opens the detail screen (DESIGN.md §7.13), passing
+    // the already-fetched Chart via Serializable extra — no extra
+    // network call needed on the detail screen.
+    adapter.onRowClick = (pos, c) -> startActivity(new Intent(this, SongDetailActivity.class).putExtra("chart", c));
     adapter.setState(1, ResultsAdapter.DownloadState.DOWNLOADING, 63);
     adapter.setState(2, ResultsAdapter.DownloadState.DONE, 100);
     adapter.setState(3, ResultsAdapter.DownloadState.ERROR, 0);
@@ -119,5 +132,16 @@ public class MainActivity extends Activity {
 
   private int dp(int v) {
     return Math.round(v * getResources().getDisplayMetrics().density);
+  }
+
+  /** TEMP demo helper — builds a Chart from a JSON blob so demo rows can carry
+   *  full detail data (difficulties, album/genre/year). Removed with the demo
+   *  data in Task 10. */
+  private static Chart demoChart(String json) {
+    try {
+      return Chart.fromJson(new JSONObject(json));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 }

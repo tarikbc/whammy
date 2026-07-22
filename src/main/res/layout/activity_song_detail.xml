@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Song detail screen (DESIGN.md §7.13). The activity's theme
+  (Theme.Whammy) already supplies the layered stage background via
+  android:windowBackground, so this root paints nothing of its own.
+
+  Structure: a back/close affordance top-left, then a scrolling column
+  (hero header, charter, Instruments section, feature-badge chips) with
+  bottom padding reserved for the pinned full-width Download button that
+  overlays the bottom of the screen.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+  <ScrollView
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:clipToPadding="false"
+      android:scrollbars="none">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/screen_padding_h"
+        android:paddingEnd="@dimen/screen_padding_h"
+        android:paddingTop="@dimen/space_8"
+        android:paddingBottom="88dp">
+
+      <!-- Back/close affordance (DESIGN.md §7.13: "a back affordance ...
+           using the activity's default back is fine" — this custom
+           ic_clear glyph is the explicitly-allowed alternative to the
+           bare device back button). -->
+      <ImageView
+          android:id="@+id/back_button"
+          android:layout_width="40dp"
+          android:layout_height="40dp"
+          android:layout_marginBottom="@dimen/space_8"
+          android:padding="9dp"
+          android:src="@drawable/ic_clear"
+          android:tint="@color/text_lo"
+          android:background="?android:attr/selectableItemBackgroundBorderless"
+          android:clickable="true"
+          android:focusable="true"
+          android:contentDescription="Back" />
+
+      <!-- Hero header (DESIGN.md §7.13): 112dp cover, r_md, edge_hair . -->
+      <LinearLayout
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:orientation="horizontal">
+
+        <FrameLayout
+            android:layout_width="112dp"
+            android:layout_height="112dp">
+
+          <ImageView
+              android:id="@+id/hero_art"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:scaleType="centerCrop"
+              android:src="@drawable/art_placeholder" />
+
+          <View
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:background="@drawable/bg_detail_hero_art" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="@dimen/space_16"
+            android:layout_gravity="center_vertical"
+            android:orientation="vertical">
+
+          <!-- Title: Archivo Expanded SemiBold ~24sp text_hi, up to 2
+               lines. No matching entry exists in styles.xml (owned by
+               another agent) at this exact size, so the face/size are
+               set inline. -->
+          <!-- TODO promote to styles.xml (Text.DetailTitle) -->
+          <TextView
+              android:id="@+id/song_title"
+              android:fontFamily="@font/archivo_expanded_semibold"
+              android:textSize="24sp"
+              android:textColor="@color/text_hi"
+              android:letterSpacing="-0.01"
+              android:lineSpacingMultiplier="1.15"
+              android:includeFontPadding="false"
+              android:maxLines="2"
+              android:ellipsize="end"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content" />
+
+          <!-- Artist: Archivo Medium 16sp text. -->
+          <!-- TODO promote to styles.xml (Text.DetailArtist) -->
+          <TextView
+              android:id="@+id/song_artist"
+              android:fontFamily="@font/archivo_medium"
+              android:textSize="16sp"
+              android:textColor="@color/text"
+              android:includeFontPadding="false"
+              android:maxLines="1"
+              android:ellipsize="end"
+              android:layout_marginTop="@dimen/space_4"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content" />
+
+          <!-- Sub: album . year . genre, text_lo, missing parts omitted. -->
+          <!-- TODO promote to styles.xml (Text.DetailSub) -->
+          <TextView
+              android:id="@+id/song_sub"
+              android:fontFamily="@font/archivo_regular"
+              android:textSize="13sp"
+              android:textColor="@color/text_lo"
+              android:includeFontPadding="false"
+              android:maxLines="1"
+              android:ellipsize="end"
+              android:layout_marginTop="@dimen/space_4"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:visibility="gone" />
+
+          <!-- Duration chip (DESIGN.md §7.13: "near the header"). -->
+          <LinearLayout
+              android:id="@+id/duration_chip"
+              android:layout_width="wrap_content"
+              android:layout_height="23dp"
+              android:layout_marginTop="@dimen/space_8"
+              android:orientation="horizontal"
+              android:gravity="center_vertical"
+              android:paddingStart="@dimen/space_8"
+              android:paddingEnd="@dimen/space_8"
+              android:background="@drawable/bg_chip"
+              android:visibility="gone">
+
+            <ImageView
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:src="@drawable/ic_clock"
+                android:tint="@color/text" />
+
+            <TextView
+                android:id="@+id/duration_text"
+                style="@style/Text.Badge"
+                android:textColor="@color/text"
+                android:layout_marginStart="3dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+          </LinearLayout>
+        </LinearLayout>
+      </LinearLayout>
+
+      <!-- Charter: "CHARTED BY XXX", the §7.3 charter look. -->
+      <TextView
+          android:id="@+id/charter"
+          style="@style/Text.Charter"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="@dimen/space_16"
+          android:visibility="gone" />
+
+      <!-- Instruments & difficulty section. -->
+      <TextView
+          style="@style/Text.Eyebrow"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="@dimen/space_24"
+          android:text="Instruments" />
+      <!-- TODO promote "Instruments" to strings.xml -->
+
+      <LinearLayout
+          android:id="@+id/instruments_container"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="@dimen/space_8"
+          android:orientation="vertical" />
+
+      <!-- Feature badges (DESIGN.md §7.13 fuller set, §7.10 chip style).
+           Populated by SongDetailActivity into a small FlowLayout so
+           chips can wrap to multiple lines (DESIGN.md §7.13 explicitly
+           allows wrap here, unlike the single-line row badges). -->
+      <com.tarikbc.whammy.FlowLayout
+          android:id="@+id/badges_container"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="@dimen/space_20" />
+
+    </LinearLayout>
+  </ScrollView>
+
+  <!-- Primary action — Download (DESIGN.md §7.6/§7.13): full-width
+       `star` button, r_md, on_accent label, ~54dp, pinned near the
+       bottom. Task 10 wires the real state machine; this renders idle
+       only. -->
+  <TextView
+      android:id="@+id/download_button"
+      style="@style/Text.Button"
+      android:layout_width="match_parent"
+      android:layout_height="@dimen/primary_button_height"
+      android:layout_gravity="bottom"
+      android:layout_marginStart="@dimen/screen_padding_h"
+      android:layout_marginEnd="@dimen/screen_padding_h"
+      android:layout_marginBottom="@dimen/space_20"
+      android:gravity="center"
+      android:background="@drawable/bg_button_primary"
+      android:clickable="true"
+      android:focusable="true"
+      android:text="Download" />
+  <!-- TODO promote "Download" to strings.xml -->
+
+</FrameLayout>

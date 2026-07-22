@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  One row of the detail screen's Instruments section (DESIGN.md §7.13):
+  instrument name (`text`) . 6-segment intensity meter . raw number
+  (`text_lo`). Inflated once per chart.difficulties entry by
+  SongDetailActivity, which fills in the three fields on the resulting
+  view.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingTop="@dimen/space_8"
+    android:paddingBottom="@dimen/space_8">
+
+  <TextView
+      android:id="@+id/instrument_name"
+      style="@style/Text.Artist"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:maxLines="1"
+      android:ellipsize="end" />
+
+  <com.tarikbc.whammy.IntensityMeterView
+      android:id="@+id/intensity_meter"
+      android:layout_width="90dp"
+      android:layout_height="8dp"
+      android:layout_marginStart="@dimen/space_12"
+      android:layout_marginEnd="@dimen/space_12" />
+
+  <TextView
+      android:id="@+id/intensity_number"
+      style="@style/Text.Badge"
+      android:layout_width="18dp"
+      android:layout_height="wrap_content"
+      android:gravity="end" />
+
+</LinearLayout>

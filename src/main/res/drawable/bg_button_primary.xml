@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Primary button background (DESIGN.md §7.6/§7.13 Download CTA / §9
+  btn_primary.xml): <shape r_md> `star` fill + a glass sheen (same
+  top-lightening technique as bg_search's layer 2) + a 1px `edge_top`
+  highlight on the top edge for the "lit from above" cue. The colored
+  glow itself comes for (near-)free via the view's elevation +
+  outlineSpotShadowColor set in code (DESIGN.md §9 "glow without blur"),
+  not from this drawable.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <!-- 1. Base fill -->
+  <item>
+    <shape android:shape="rectangle">
+      <corners android:radius="@dimen/r_md" />
+      <solid android:color="@color/star" />
+    </shape>
+  </item>
+
+  <!-- 2. Glass sheen: a whisper of lightening in the top ~40% -->
+  <item>
+    <shape android:shape="rectangle">
+      <corners android:radius="@dimen/r_md" />
+      <gradient
+          android:type="linear"
+          android:angle="270"
+          android:startColor="#33FFFFFF"
+          android:centerColor="#00FFFFFF"
+          android:centerY="0.4"
+          android:endColor="#00FFFFFF" />
+    </shape>
+  </item>
+
+  <!-- 3. Top inner highlight -->
+  <item android:gravity="top|fill_horizontal" android:height="1dp">
+    <shape android:shape="rectangle">
+      <corners android:radius="@dimen/r_md" />
+      <solid android:color="@color/edge_top" />
+    </shape>
+  </item>
+
+</layer-list>
