@@ -19,6 +19,7 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -26,13 +27,36 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends Activity {
+
+  /**
+   * Sort options offered on the Sort chip (task-search-screen-features):
+   * {@code type}/{@code direction} feed {@link EncoreApi.SearchParams}
+   * directly (null/null = relevance, the API's default when {@code sort}
+   * is omitted); {@code chipLabel} is the short form shown on the chip
+   * itself once selected ("Sort: Name"), {@code menuLabel} the fuller
+   * text in the popup menu.
+   */
+  private enum SortOption {
+    RELEVANCE(null, null, "Sort", "Relevance"),
+    NAME("name", "asc", "Name", "Name (A–Z)"),
+    ARTIST("artist", "asc", "Artist", "Artist (A–Z)"),
+    LONGEST("length", "desc", "Longest", "Longest first"),
+    SHORTEST("length", "asc", "Shortest", "Shortest first");
+
+    final String type, direction, chipLabel, menuLabel;
+    SortOption(String type, String direction, String chipLabel, String menuLabel) {
+      this.type = type; this.direction = direction; this.chipLabel = chipLabel; this.menuLabel = menuLabel;
+    }
+  }
 
   private final ExecutorService executor = Executors.newSingleThreadExecutor();
   private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -58,6 +82,8 @@ public class MainActivity extends Activity {
   private ResultsAdapter adapter;
   private String currentQuery;
   private String currentInstrument; // null = no instrument filter (server-side)
+  private String currentDifficulty; // null = no difficulty filter (server-side); else "easy"/"medium"/"hard"/"expert"
+  private SortOption currentSort = SortOption.RELEVANCE; // server-side
   private boolean videoOnly;        // client-side filter
   private int currentPage;
   private boolean loadingMore;
@@ -70,9 +96,20 @@ public class MainActivity extends Activity {
    *  visible list without re-hitting the network. */
   private final List<Chart> loadedRaw = new ArrayList<>();
 
+  /** Normalized "already downloaded" keys (task-search-screen-features),
+   *  from {@link SongStore#existingChartKeys()} — recomputed on the
+   *  background executor after a page loads, after a successful
+   *  download, and on {@link #onResume}, then pushed into {@link
+   *  #adapter}. Cached here (rather than only living on the adapter) so
+   *  a freshly-created adapter (a brand-new search) can be seeded with
+   *  the latest known set immediately instead of starting blank. */
+  private Set<String> downloadedKeys = Collections.emptySet();
+
   private HorizontalScrollView filterRail;
   private final Map<String, TextView> instrumentChips = new LinkedHashMap<>();
+  private final Map<String, TextView> difficultyChips = new LinkedHashMap<>();
   private TextView videoChip;
+  private TextView sortChip;
 
   @Override protected void onCreate(Bundle s) {
     super.onCreate(s);
@@ -195,16 +232,32 @@ public class MainActivity extends Activity {
     instrumentChips.put("drums", (TextView) findViewById(R.id.chip_instrument_drums));
     instrumentChips.put("keys", (TextView) findViewById(R.id.chip_instrument_keys));
     instrumentChips.put("vocals", (TextView) findViewById(R.id.chip_instrument_vocals));
+    difficultyChips.put("easy", (TextView) findViewById(R.id.chip_difficulty_easy));
+    difficultyChips.put("medium", (TextView) findViewById(R.id.chip_difficulty_medium));
+    difficultyChips.put("hard", (TextView) findViewById(R.id.chip_difficulty_hard));
+    difficultyChips.put("expert", (TextView) findViewById(R.id.chip_difficulty_expert));
     videoChip = findViewById(R.id.chip_video);
+    sortChip = findViewById(R.id.chip_sort);
 
     for (Map.Entry<String, TextView> entry : instrumentChips.entrySet()) {
       String instrument = entry.getKey();
       TextView chip = entry.getValue();
       chip.setOnClickListener(v -> {
         if (currentQuery == null) return;
-        String newInstrument = instrument.equals(currentInstrument) ? null : instrument;
+        currentInstrument = instrument.equals(currentInstrument) ? null : instrument;
         animateChipTap(chip);
-        startNewSearch(currentQuery, newInstrument);
+        startNewSearch();
+      });
+    }
+
+    for (Map.Entry<String, TextView> entry : difficultyChips.entrySet()) {
+      String difficulty = entry.getKey();
+      TextView chip = entry.getValue();
+      chip.setOnClickListener(v -> {
+        if (currentQuery == null) return;
+        currentDifficulty = difficulty.equals(currentDifficulty) ? null : difficulty;
+        animateChipTap(chip);
+        startNewSearch();
       });
     }
 
@@ -215,16 +268,56 @@ public class MainActivity extends Activity {
       updateFilterChipStyles();
       applyVideoFilterAndRefresh();
     });
+
+    sortChip.setOnClickListener(v -> {
+      if (currentQuery == null) return;
+      showSortMenu();
+    });
   }
 
-  /** Reflects {@link #currentInstrument}/{@link #videoOnly} onto the chip
+  /** Sort chip tap: a PopupMenu of every {@link SortOption} (Relevance
+   *  first, so it always doubles as the "clear sort" affordance) — kept
+   *  as one menu rather than five more chips so the rail stays close to
+   *  DESIGN.md §7.11's "essential few" guidance. Selecting a DIFFERENT
+   *  option than the current one re-runs the search from page 1
+   *  (server-side sort); re-selecting the current option is a no-op. */
+  private void showSortMenu() {
+    PopupMenu menu = new PopupMenu(this, sortChip);
+    for (SortOption opt : SortOption.values()) {
+      menu.getMenu().add(0, opt.ordinal(), opt.ordinal(), opt.menuLabel);
+    }
+    menu.getMenu().setGroupCheckable(0, true, true);
+    menu.getMenu().getItem(currentSort.ordinal()).setChecked(true);
+    menu.setOnMenuItemClickListener(item -> {
+      SortOption selected = SortOption.values()[item.getItemId()];
+      if (selected != currentSort) {
+        currentSort = selected;
+        animateChipTap(sortChip);
+        startNewSearch();
+      }
+      return true;
+    });
+    menu.show();
+  }
+
+  /** Reflects {@link #currentInstrument}/{@link #currentDifficulty}/
+   *  {@link #currentSort}/{@link #videoOnly} onto the chip
    *  backgrounds/label colors (DESIGN.md §7.11: selected = star 1.5dp
-   *  stroke + text_hi label; unselected = text label). */
+   *  stroke + text_hi label; unselected = text label). The Sort chip's
+   *  own text also reflects the current selection ("Sort" at the
+   *  default Relevance, "Sort: Name" etc. once changed). */
   private void updateFilterChipStyles() {
     for (Map.Entry<String, TextView> entry : instrumentChips.entrySet()) {
       setChipSelected(entry.getValue(), entry.getKey().equals(currentInstrument));
     }
+    for (Map.Entry<String, TextView> entry : difficultyChips.entrySet()) {
+      setChipSelected(entry.getValue(), entry.getKey().equals(currentDifficulty));
+    }
     setChipSelected(videoChip, videoOnly);
+
+    boolean sortActive = currentSort != SortOption.RELEVANCE;
+    setChipSelected(sortChip, sortActive);
+    sortChip.setText(sortActive ? "Sort: " + currentSort.chipLabel : "Sort");
   }
 
   private void setChipSelected(TextView chip, boolean selected) {
@@ -256,13 +349,17 @@ public class MainActivity extends Activity {
     String trimmed = query == null ? "" : query.trim();
     if (trimmed.isEmpty()) return;
     hideKeyboard();
-    startNewSearch(trimmed, currentInstrument);
+    currentQuery = trimmed;
+    startNewSearch();
   }
 
-  private void startNewSearch(String query, String instrument) {
+  /** Re-runs {@link #currentQuery} from page 1 with whatever {@link
+   *  #currentInstrument}/{@link #currentDifficulty}/{@link #currentSort}
+   *  are currently set to — the common path for the initial search AND
+   *  every filter/sort change (each is a new search server-side, so it
+   *  bumps {@link #searchGeneration} the same way). */
+  private void startNewSearch() {
     searchGeneration++;   // invalidate any in-flight page from a prior search
-    currentQuery = query;
-    currentInstrument = instrument;
     currentPage = 0;
     reachedEnd = false;
     loadingMore = false;
@@ -311,11 +408,12 @@ public class MainActivity extends Activity {
   private void fetchPage(int page, int chainDepth) {
     loadingMore = true;
     final String query = currentQuery;
-    final String instrument = currentInstrument;
+    final EncoreApi.SearchParams params = new EncoreApi.SearchParams(
+        currentInstrument, currentDifficulty, currentSort.type, currentSort.direction);
     final int gen = searchGeneration;
     executor.execute(() -> {
       try {
-        List<Chart> raw = EncoreApi.search(query, page, instrument);
+        List<Chart> raw = EncoreApi.search(query, page, params);
         mainHandler.post(() -> onPageLoaded(gen, page, raw, chainDepth));
       } catch (IOException e) {
         mainHandler.post(() -> onPageLoadFailure(gen, page));
@@ -383,6 +481,35 @@ public class MainActivity extends Activity {
       adapter.append(filtered);
     }
     loadingMore = false;
+    // New rows (a first page or an appended page) need the "already
+    // downloaded" cross-ref (task-search-screen-features) — recompute
+    // from disk since a chart downloaded in another session since our
+    // last check should now show as IN LIBRARY too.
+    refreshDownloadedKeys();
+  }
+
+  /** Recomputes {@link #downloadedKeys} from {@link SongStore} on the
+   *  background executor (disk I/O) and pushes the result into {@link
+   *  #adapter} on the UI thread — called after a page loads, after a
+   *  successful download, and from {@link #onResume} so deletions/
+   *  downloads made elsewhere (the Library screen, Clone Hero itself)
+   *  are reflected next time this screen is visible. */
+  private void refreshDownloadedKeys() {
+    executor.execute(() -> {
+      final Set<String> keys = SongStore.existingChartKeys();
+      mainHandler.post(() -> {
+        downloadedKeys = keys;
+        if (adapter != null) adapter.setDownloadedKeys(keys);
+      });
+    });
+  }
+
+  @Override protected void onResume() {
+    super.onResume();
+    // Only meaningful once a search has actually run — no-op on the
+    // first-launch empty state, where there's nothing to cross-reference
+    // yet and filterRail/adapter aren't in a "search context" either.
+    if (currentQuery != null) refreshDownloadedKeys();
   }
 
   /** Builds a fresh adapter for {@code results} — a clean set of IDLE
@@ -399,6 +526,11 @@ public class MainActivity extends Activity {
     newAdapter.onRowClick = (pos, c) ->
         startActivity(new Intent(this, SongDetailActivity.class).putExtra("chart", c));
     newAdapter.onDownload = (pos, c) -> startDownload(pos, c, newAdapter);
+    // Seed with whatever's already known (task-search-screen-features) —
+    // refreshDownloadedKeys() (called right after this in onPageLoaded)
+    // will follow up with an up-to-date read, but there's no reason to
+    // start every fresh adapter blank when we already have a cached set.
+    newAdapter.setDownloadedKeys(downloadedKeys);
     adapter = newAdapter;
     rv.setAdapter(newAdapter);
     showResults();
@@ -427,6 +559,11 @@ public class MainActivity extends Activity {
         Toast.makeText(MainActivity.this,
             "Added: " + chart.name + " · Scan your library in Clone Hero",
             Toast.LENGTH_LONG).show();
+        // The library folder just changed — refresh the "already
+        // downloaded" cross-ref (task-search-screen-features) so other
+        // rows for the same chart (e.g. a duplicate further down the
+        // results, or after a later re-search) pick it up too.
+        refreshDownloadedKeys();
       }
       @Override public void onError(Exception e) {
         adapter.setState(pos, ResultsAdapter.DownloadState.ERROR, 0);

@@ -27,8 +27,57 @@ class EncoreApiTest {
         assertEquals("drums", b.getString("instrument"));
     }
     @Test void searchBody_nullInstrumentStaysJsonNull() {
-        JSONObject b = new JSONObject(EncoreApi.buildSearchBody("metallica", 1, 25, null));
+        JSONObject b = new JSONObject(EncoreApi.buildSearchBody("metallica", 1, 25, (String) null));
         assertTrue(b.isNull("instrument"));
+    }
+    @Test void searchBody_paramsNullSameAsNone() {
+        JSONObject b = new JSONObject(EncoreApi.buildSearchBody("metallica", 1, 25, (EncoreApi.SearchParams) null));
+        assertTrue(b.isNull("instrument"));
+        assertTrue(b.isNull("difficulty"));
+        assertTrue(b.isNull("sort"));
+    }
+    @Test void searchBody_difficultyGoesIntoBodyAsRawTierString() {
+        JSONObject b = new JSONObject(EncoreApi.buildSearchBody("metallica", 1, 25,
+            new EncoreApi.SearchParams(null, "expert", null, null)));
+        assertEquals("expert", b.getString("difficulty"));
+    }
+    @Test void searchBody_nullDifficultyStaysJsonNull() {
+        JSONObject b = new JSONObject(EncoreApi.buildSearchBody("metallica", 1, 25, EncoreApi.SearchParams.NONE));
+        assertTrue(b.isNull("difficulty"));
+    }
+    @Test void searchBody_sortEmitsTypeAndDirectionObject() {
+        JSONObject b = new JSONObject(EncoreApi.buildSearchBody("metallica", 1, 25,
+            new EncoreApi.SearchParams(null, null, "name", "asc")));
+        JSONObject sort = b.getJSONObject("sort");
+        assertEquals("name", sort.getString("type"));
+        assertEquals("asc", sort.getString("direction"));
+    }
+    @Test void searchBody_sortLengthDescForLongestFirst() {
+        JSONObject b = new JSONObject(EncoreApi.buildSearchBody("metallica", 1, 25,
+            new EncoreApi.SearchParams(null, null, "length", "desc")));
+        JSONObject sort = b.getJSONObject("sort");
+        assertEquals("length", sort.getString("type"));
+        assertEquals("desc", sort.getString("direction"));
+    }
+    @Test void searchBody_sortDefaultsDirectionAscWhenUnset() {
+        JSONObject b = new JSONObject(EncoreApi.buildSearchBody("metallica", 1, 25,
+            new EncoreApi.SearchParams(null, null, "artist", null)));
+        JSONObject sort = b.getJSONObject("sort");
+        assertEquals("artist", sort.getString("type"));
+        assertEquals("asc", sort.getString("direction"));
+    }
+    @Test void searchBody_nullSortTypeStaysJsonNull() {
+        JSONObject b = new JSONObject(EncoreApi.buildSearchBody("metallica", 1, 25, EncoreApi.SearchParams.NONE));
+        assertTrue(b.isNull("sort"));
+    }
+    @Test void searchBody_instrumentDifficultySortAllCombine() {
+        JSONObject b = new JSONObject(EncoreApi.buildSearchBody("metallica", 1, 25,
+            new EncoreApi.SearchParams("drums", "hard", "length", "desc")));
+        assertEquals("drums", b.getString("instrument"));
+        assertEquals("hard", b.getString("difficulty"));
+        JSONObject sort = b.getJSONObject("sort");
+        assertEquals("length", sort.getString("type"));
+        assertEquals("desc", sort.getString("direction"));
     }
     @Test void chart_fromJson_readsFieldsAndToleratesNulls() {
         JSONObject o = new JSONObject("{\"md5\":\""+"a".repeat(32)+"\",\"name\":\"Sultans of Swing\",\"artist\":\"Dire Straits\",\"charter\":\"Harmonix\",\"album\":null}");

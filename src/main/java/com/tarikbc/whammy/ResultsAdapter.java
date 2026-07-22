@@ -19,10 +19,12 @@ import android.widget.TextView;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * DESIGN.md §7.3-§7.4: result row + note-button state machinery.
@@ -102,6 +104,29 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
 
   /** Set by the host to receive note-button taps. */
   public OnDownload onDownload;
+
+  /** Normalized (lowercased) "already in your library" keys
+   *  (task-search-screen-features), from {@link
+   *  SongStore#existingChartKeys()} — cross-referenced per row against
+   *  {@link SongStore#keyFor(Chart)} in {@link #onBindViewHolder}. Never
+   *  null (defaults to empty so a fresh adapter with no host-supplied set
+   *  yet just shows nothing as downloaded, rather than NPEing). Replaced
+   *  wholesale (not merged) by {@link #setDownloadedKeys}, so nothing
+   *  leaks across an unrelated search's rows. */
+  private Set<String> downloadedKeys = Collections.emptySet();
+
+  /** Host calls this after computing the current downloaded-chart set
+   *  (background executor — disk I/O) so every row can render its IN
+   *  LIBRARY indicator. Re-binds every row since which keys are present
+   *  can change independent of any row's own {@link DownloadState}. */
+  public void setDownloadedKeys(Set<String> keys) {
+    this.downloadedKeys = keys == null ? Collections.emptySet() : keys;
+    notifyDataSetChanged();
+  }
+
+  private boolean isInLibrary(Chart c) {
+    return downloadedKeys.contains(SongStore.keyFor(c));
+  }
 
   public ResultsAdapter(List<Chart> charts, ArtLoader artLoader) {
     // Copy into a mutable ArrayList regardless of what the caller passed in
@@ -203,8 +228,19 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
         hideProgressRing(h);
         h.noteButton.setBackgroundResource(R.drawable.note_ring);
         h.noteButton.setBackgroundTintList(null);
-        h.noteIcon.setImageResource(R.drawable.ic_download);
-        h.noteIcon.setImageTintList(ColorStateList.valueOf(ctx.getColor(R.color.star)));
+        if (isInLibrary(c)) {
+          // Already on disk from a PRIOR session (task-search-screen-
+          // features) — a muted fret_green check inside the same hollow
+          // idle ring, deliberately quieter than the filled-disc DONE
+          // treatment below (that one's reserved for a download that
+          // JUST finished THIS session). Still tappable/re-downloadable
+          // like any other IDLE row — only the icon/tint differ.
+          h.noteIcon.setImageResource(R.drawable.ic_check);
+          h.noteIcon.setImageTintList(ColorStateList.valueOf(ctx.getColor(R.color.fret_green)));
+        } else {
+          h.noteIcon.setImageResource(R.drawable.ic_download);
+          h.noteIcon.setImageTintList(ColorStateList.valueOf(ctx.getColor(R.color.star)));
+        }
         break;
     }
 
@@ -263,6 +299,7 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
     h.badges.removeAllViews();
 
     if (c.isSetlist()) buildSetlistChip(h.badges, ctx);
+    if (isInLibrary(c)) buildInLibraryChip(h.badges, ctx);
 
     buildInstrumentChip(h.badges, ctx, c);
 
@@ -397,6 +434,41 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
     // file scope — values/ belongs to another agent); literal is safe
     // since Text.Charter already applies textAllCaps.
     tv.setText("VIDEO");
+    chip.addView(tv);
+
+    row.addView(chip);
+  }
+
+  /**
+   * IN LIBRARY chip (task-search-screen-features): a check glyph + label
+   * tinted {@code fret_green} so "you already have this" reads at a
+   * glance — reuses the neutral {@code bg_chip} shell (no new drawable
+   * needed) and carries the color in the icon/text only, the same
+   * "shell stays neutral, icon+text carry the accent" pattern as {@link
+   * #buildVideoChip}. Kept distinct from {@code star} (already means
+   * VIDEO/SETLIST) and from the note button's filled-disc DONE treatment
+   * (that one's reserved for a download that just finished THIS
+   * session — see the IDLE branch of {@link #onBindViewHolder}).
+   */
+  private void buildInLibraryChip(LinearLayout row, Context ctx) {
+    LinearLayout chip = newChip(ctx, row, R.drawable.bg_chip);
+
+    ImageView icon = new ImageView(ctx);
+    icon.setLayoutParams(new LinearLayout.LayoutParams(dp(ctx, CHIP_ICON_SIZE_DP), dp(ctx, CHIP_ICON_SIZE_DP)));
+    icon.setImageResource(R.drawable.ic_check);
+    icon.setImageTintList(ColorStateList.valueOf(ctx.getColor(R.color.fret_green)));
+    chip.addView(icon);
+
+    TextView tv = new TextView(ctx, null, 0, R.style.Text_Charter);
+    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+    lp.leftMargin = dp(ctx, CHIP_ICON_GAP_DP);
+    tv.setLayoutParams(lp);
+    tv.setTextColor(ctx.getColor(R.color.fret_green));
+    // No R.string.badge_in_library exists (strings.xml is outside this
+    // task's file scope per the original ownership split); literal is
+    // safe since Text.Charter already applies textAllCaps.
+    tv.setText("IN LIBRARY");
     chip.addView(tv);
 
     row.addView(chip);

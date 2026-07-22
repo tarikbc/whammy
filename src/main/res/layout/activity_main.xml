@@ -191,8 +191,84 @@
           android:text="Vocals" />
 
       <!-- Divider gap between the (server-side, single-select) instrument
-           group and the (client-side) Video toggle: extra space reads as
-           a deliberate group break rather than just another chip. -->
+           group and the (server-side, single-select) difficulty group:
+           extra space reads as a deliberate group break rather than just
+           another chip. -->
+      <View
+          android:layout_width="@dimen/space_12"
+          android:layout_height="1dp" />
+
+      <!-- Difficulty tier (task-search-screen-features): single-select,
+           server-side (the API body's `difficulty` param — one of
+           "easy"/"medium"/"hard"/"expert", not a number). Most meaningful
+           alongside an instrument selection but accepted regardless. Same
+           bg_chip_filter/bg_chip_filter_selected shell + selection
+           treatment as the instrument chips above. -->
+      <TextView
+          android:id="@+id/chip_difficulty_easy"
+          style="@style/Text.Charter"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:background="@drawable/bg_chip_filter"
+          android:textColor="@color/text"
+          android:paddingStart="@dimen/space_12"
+          android:paddingEnd="@dimen/space_12"
+          android:paddingTop="@dimen/space_8"
+          android:paddingBottom="@dimen/space_8"
+          android:clickable="true"
+          android:focusable="true"
+          android:text="Easy" />
+
+      <TextView
+          android:id="@+id/chip_difficulty_medium"
+          style="@style/Text.Charter"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="@dimen/badge_gap"
+          android:background="@drawable/bg_chip_filter"
+          android:textColor="@color/text"
+          android:paddingStart="@dimen/space_12"
+          android:paddingEnd="@dimen/space_12"
+          android:paddingTop="@dimen/space_8"
+          android:paddingBottom="@dimen/space_8"
+          android:clickable="true"
+          android:focusable="true"
+          android:text="Medium" />
+
+      <TextView
+          android:id="@+id/chip_difficulty_hard"
+          style="@style/Text.Charter"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="@dimen/badge_gap"
+          android:background="@drawable/bg_chip_filter"
+          android:textColor="@color/text"
+          android:paddingStart="@dimen/space_12"
+          android:paddingEnd="@dimen/space_12"
+          android:paddingTop="@dimen/space_8"
+          android:paddingBottom="@dimen/space_8"
+          android:clickable="true"
+          android:focusable="true"
+          android:text="Hard" />
+
+      <TextView
+          android:id="@+id/chip_difficulty_expert"
+          style="@style/Text.Charter"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="@dimen/badge_gap"
+          android:background="@drawable/bg_chip_filter"
+          android:textColor="@color/text"
+          android:paddingStart="@dimen/space_12"
+          android:paddingEnd="@dimen/space_12"
+          android:paddingTop="@dimen/space_8"
+          android:paddingBottom="@dimen/space_8"
+          android:clickable="true"
+          android:focusable="true"
+          android:text="Expert" />
+
+      <!-- Divider gap between the difficulty group and the (client-side)
+           Video toggle. -->
       <View
           android:layout_width="@dimen/space_12"
           android:layout_height="1dp" />
@@ -211,6 +287,34 @@
           android:clickable="true"
           android:focusable="true"
           android:text="Video" />
+
+      <!-- Divider gap before the Sort control. -->
+      <View
+          android:layout_width="@dimen/space_12"
+          android:layout_height="1dp" />
+
+      <!-- Sort (task-search-screen-features): opens a PopupMenu of
+           Relevance/Name/Artist/Longest/Shortest (server-side, the API
+           body's `sort` object). The chip's own label reflects the
+           current selection ("Sort" at the default Relevance, "Sort:
+           Name" etc. once changed) and takes the same selected treatment
+           as the other filter chips when non-default — kept as ONE chip
+           (not five) so the rail stays close to DESIGN.md §7.11's
+           "essential few" guidance despite the extra dimension. -->
+      <TextView
+          android:id="@+id/chip_sort"
+          style="@style/Text.Charter"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:background="@drawable/bg_chip_filter"
+          android:textColor="@color/text"
+          android:paddingStart="@dimen/space_12"
+          android:paddingEnd="@dimen/space_12"
+          android:paddingTop="@dimen/space_8"
+          android:paddingBottom="@dimen/space_8"
+          android:clickable="true"
+          android:focusable="true"
+          android:text="Sort" />
     </LinearLayout>
   </HorizontalScrollView>
 

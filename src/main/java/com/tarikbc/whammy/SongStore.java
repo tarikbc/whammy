@@ -21,6 +21,58 @@ public class SongStore {
         if (!d.exists()) d.mkdirs();
         return d;
     }
+    /**
+     * Bulk cross-reference for the search screen's "already in your
+     * library" indicator (task-search-screen-features): a normalized
+     * (lowercased) set of every chart present in {@code dir} -- the base
+     * filename (minus ".sng") for each loose {@code .sng} file, and the
+     * folder name for each chart subdirectory (Clone Hero's own
+     * unpacked-chart layout). Reads the folder with a single {@code
+     * listFiles()} call rather than hitting disk once per search result.
+     * Mirrors the {@link #list(java.io.File)}/{@link #list()} split so
+     * this stays unit-testable against a plain temp dir (JUnit) as well
+     * as usable against the real device folder. On any read failure
+     * (permission denied, null/missing/non-directory {@code dir}, I/O
+     * hiccup) simply returns an empty set -- callers should just not show
+     * the indicator rather than treat this as fatal.
+     */
+    public static java.util.Set<String> existingChartKeys(java.io.File dir) {
+        java.util.Set<String> out = new java.util.HashSet<>();
+        try {
+            java.io.File[] files = dir == null ? null : dir.listFiles();
+            if (files == null) return out;
+            for (java.io.File f : files) {
+                String n = f.getName();
+                if (f.isDirectory()) {
+                    out.add(n.toLowerCase(java.util.Locale.ROOT));
+                } else if (f.isFile() && n.toLowerCase(java.util.Locale.ROOT).endsWith(".sng")) {
+                    out.add(n.substring(0, n.length() - 4).toLowerCase(java.util.Locale.ROOT));
+                }
+            }
+        } catch (Exception e) {
+            return new java.util.HashSet<>();
+        }
+        return out;
+    }
+
+    /** {@link #existingChartKeys(java.io.File)} over the real Clone Hero songs folder
+     *  (needs all-files access to read it -- an unreadable/missing folder
+     *  already degrades to an empty set above). */
+    public static java.util.Set<String> existingChartKeys() {
+        return existingChartKeys(songsDir());
+    }
+
+    /**
+     * The same normalized key {@link #existingChartKeys()} would produce
+     * for a chart Whammy itself downloaded -- {@link #sanitizeFilename}
+     * minus the ".sng" extension, lowercased -- so a search result for a
+     * chart already sitting in {@link #songsDir()} matches it.
+     */
+    public static String keyFor(Chart c) {
+        String fn = sanitizeFilename(c);
+        return fn.substring(0, fn.length() - 4).toLowerCase(java.util.Locale.ROOT);
+    }
+
     public static java.io.File place(java.io.File tempSng, Chart c) throws java.io.IOException {
         java.io.File dest = new java.io.File(songsDir(), sanitizeFilename(c));
         if (dest.exists()) dest.delete();

@@ -137,4 +137,52 @@ class SongStoreTest {
         assertTrue(SongStore.delete(null));
         assertTrue(SongStore.delete(new File("/no/such/whammy-file-xyz")));
     }
+
+    // -- existingChartKeys()/keyFor() (task-search-screen-features: "already in your library") --
+
+    @Test void existingChartKeysIncludesSngBasenamesAndFolderNamesLowercased() throws IOException {
+        File dir = Files.createTempDirectory("whammy-lib-test").toFile();
+        try {
+            writeBytes(new File(dir, "Dire Straits - Sultans Of Swing (Harmonix).sng"), 10);
+            File folder = new File(dir, "AC-DC - TNT (Someone)");
+            assertTrue(folder.mkdir());
+            writeBytes(new File(folder, "notes.chart"), 5);
+            // A non-.sng loose file must never contribute a key.
+            writeBytes(new File(dir, "readme.txt"), 5);
+
+            java.util.Set<String> keys = SongStore.existingChartKeys(dir);
+            assertEquals(2, keys.size());
+            assertTrue(keys.contains("dire straits - sultans of swing (harmonix)"));
+            assertTrue(keys.contains("ac-dc - tnt (someone)"));
+        } finally {
+            SongStore.delete(dir);
+        }
+    }
+
+    @Test void existingChartKeysEmptyOnMissingOrNullDir() {
+        assertTrue(SongStore.existingChartKeys((File) null).isEmpty());
+        assertTrue(SongStore.existingChartKeys(new File("/no/such/whammy-dir-xyz")).isEmpty());
+    }
+
+    @Test void keyForMatchesSanitizeFilenameMinusExtensionLowercased() {
+        Chart chart = c("Dire Straits", "Sultans Of Swing", "Harmonix");
+        assertEquals("dire straits - sultans of swing (harmonix)", SongStore.keyFor(chart));
+        assertEquals(SongStore.sanitizeFilename(chart).toLowerCase(java.util.Locale.ROOT),
+            SongStore.keyFor(chart) + ".sng");
+    }
+
+    @Test void keyForMatchesExistingChartKeysForAWhammyDownloadedFile() throws IOException {
+        // A chart Whammy itself downloaded lands on disk under exactly
+        // sanitizeFilename(chart) -- keyFor(chart) must line up with what
+        // existingChartKeys() derives from that same file so a re-search
+        // recognizes it as already downloaded.
+        File dir = Files.createTempDirectory("whammy-lib-test").toFile();
+        try {
+            Chart chart = c("AC/DC", "TN:T", "X");
+            writeBytes(new File(dir, SongStore.sanitizeFilename(chart)), 10);
+            assertTrue(SongStore.existingChartKeys(dir).contains(SongStore.keyFor(chart)));
+        } finally {
+            SongStore.delete(dir);
+        }
+    }
 }

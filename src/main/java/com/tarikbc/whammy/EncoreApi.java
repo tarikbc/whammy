@@ -12,8 +12,40 @@ public class EncoreApi {
     // Callers must check albumArtMd5 != null before calling (field may be absent from search results).
     public static String artUrl(String albumArtMd5) { return "https://files.enchor.us/" + albumArtMd5 + ".jpg"; }
 
+    /**
+     * Immutable bundle of every server-side search refinement beyond the
+     * raw query text (DESIGN.md §7.11 + task-search-screen-features):
+     * instrument, difficulty tier, and sort. Threading these through a
+     * single small value type (rather than a growing pile of positional
+     * String/String/String parameters) keeps {@link #search} / {@link
+     * #buildSearchBody} readable as more filters land.
+     *
+     * <p>{@code sortType} is one of "name"/"artist"/"length" (or null for
+     * relevance — the API's default, omitted/null sort); {@code
+     * sortDirection} is "asc"/"desc" and is only meaningful when {@code
+     * sortType} is set. {@code difficulty} is one of "easy"/"medium"/
+     * "hard"/"expert" (a tier string, NOT a number — the live API errors
+     * on numeric difficulty) or null for no difficulty filter.
+     */
+    public static final class SearchParams {
+        /** No instrument/difficulty/sort filter — plain relevance search. */
+        public static final SearchParams NONE = new SearchParams(null, null, null, null);
+
+        public final String instrument;
+        public final String difficulty;
+        public final String sortType;
+        public final String sortDirection;
+
+        public SearchParams(String instrument, String difficulty, String sortType, String sortDirection) {
+            this.instrument = instrument;
+            this.difficulty = difficulty;
+            this.sortType = sortType;
+            this.sortDirection = sortDirection;
+        }
+    }
+
     public static List<Chart> search(String query, int page) throws IOException {
-        return search(query, page, null);
+        return search(query, page, SearchParams.NONE);
     }
 
     /**
@@ -24,6 +56,15 @@ public class EncoreApi {
      * null→506, "drums"→9).
      */
     public static List<Chart> search(String query, int page, String instrument) throws IOException {
+        return search(query, page, new SearchParams(instrument, null, null, null));
+    }
+
+    /**
+     * Full-featured search: instrument + difficulty + sort, all via
+     * {@link SearchParams} (task-search-screen-features). {@code params}
+     * may be null, treated the same as {@link SearchParams#NONE}.
+     */
+    public static List<Chart> search(String query, int page, SearchParams params) throws IOException {
         HttpURLConnection c = (HttpURLConnection) new URL(SEARCH_URL).openConnection();
         c.setRequestMethod("POST");
         c.setConnectTimeout(15000); c.setReadTimeout(30000);
@@ -32,7 +73,7 @@ public class EncoreApi {
         c.setDoOutput(true);
         try {
             try (OutputStream os = c.getOutputStream()) {
-                os.write(buildSearchBody(query, page, 25, instrument).getBytes("UTF-8"));
+                os.write(buildSearchBody(query, page, 25, params).getBytes("UTF-8"));
             }
             int code = c.getResponseCode();
             String body;
@@ -105,23 +146,45 @@ public class EncoreApi {
     }
 
     public static String buildSearchBody(String query, int page, int perPage) {
-        return buildSearchBody(query, page, perPage, null);
+        return buildSearchBody(query, page, perPage, SearchParams.NONE);
     }
 
     /** @param instrument lowercase instrument name ("guitar"/"bass"/"drums"/
      *  "keys"/"vocals") to filter server-side, or null for no filter
      *  (DESIGN.md §7.11). */
     public static String buildSearchBody(String query, int page, int perPage, String instrument) {
+        return buildSearchBody(query, page, perPage, new SearchParams(instrument, null, null, null));
+    }
+
+    /**
+     * Full-featured search body (task-search-screen-features): instrument,
+     * difficulty tier, and sort, via {@link SearchParams} (null treated as
+     * {@link SearchParams#NONE}). {@code sort} is emitted as the object
+     * shape the live API expects — {@code {"type":..,"direction":..}} —
+     * or {@code null} for relevance when {@code sortType} is unset;
+     * {@code difficulty} is emitted as its raw tier string, or {@code null}
+     * when unset (verified live: numeric difficulty errors out, the tier
+     * string does not).
+     */
+    public static String buildSearchBody(String query, int page, int perPage, SearchParams params) {
+        SearchParams p = params == null ? SearchParams.NONE : params;
         try {
             JSONObject b = new JSONObject();
             b.put("search", query == null ? "" : query);
             b.put("per_page", perPage);
             b.put("page", page);
-            b.put("instrument", instrument == null ? JSONObject.NULL : instrument);
-            b.put("difficulty", JSONObject.NULL);
+            b.put("instrument", p.instrument == null ? JSONObject.NULL : p.instrument);
+            b.put("difficulty", p.difficulty == null ? JSONObject.NULL : p.difficulty);
             b.put("drumType", JSONObject.NULL);
             b.put("drumsReviewed", true);
-            b.put("sort", JSONObject.NULL);
+            if (p.sortType == null) {
+                b.put("sort", JSONObject.NULL);
+            } else {
+                JSONObject sort = new JSONObject();
+                sort.put("type", p.sortType);
+                sort.put("direction", p.sortDirection == null ? "asc" : p.sortDirection);
+                b.put("sort", sort);
+            }
             b.put("source", "bridge");
             return b.toString();
         } catch (org.json.JSONException e) {
