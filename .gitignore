@@ -1,0 +1,20 @@
+# Design-agent verification artifacts (headless screenshots / logs)
+.gstack/
+
+# Android build outputs (added as the build lands)
+/build/
+/out/
+*.apk
+*.aab
+*.dex
+*.ap_
+gen/
+# Signing keys — never commit
+*.jks
+*.keystore
+keystore/
+
+# OS / editor
+.DS_Store
+.idea/
+*.iml
