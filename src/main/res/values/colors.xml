@@ -1,0 +1,30 @@
+<resources>
+  <!-- 3.1 Surface ramp (depth) -->
+  <color name="stage_black">#0A0B12</color>
+  <color name="surface_low">#0E1017</color>
+  <color name="surface">#14161F</color>
+  <color name="surface_hi">#1B1E29</color>
+  <color name="surface_top">#242835</color>
+
+  <!-- 3.2 Edges & light -->
+  <color name="edge_top">#14FFFFFF</color>
+  <color name="edge_hair">#0DFFFFFF</color>
+  <color name="edge_shadow">#73000000</color>
+
+  <!-- 3.4 Text -->
+  <color name="text_hi">#F4F6FF</color>
+  <color name="text">#AEB4C7</color>
+  <color name="text_lo">#7E86A0</color>
+
+  <!-- 3.5 Frets -->
+  <color name="fret_green">#3CE07B</color>
+  <color name="fret_red">#FF4D6A</color>
+  <color name="fret_yellow">#FFD23F</color>
+  <color name="fret_blue">#3B9DFF</color>
+  <color name="fret_orange">#FF8A3D</color>
+
+  <!-- 3.6 Action / interactive -->
+  <color name="star">#35E6E1</color>
+  <color name="star_deep">#3B9DFF</color>
+  <color name="on_accent">#05222A</color>
+</resources>

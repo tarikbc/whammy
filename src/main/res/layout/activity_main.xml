@@ -1,7 +1,10 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent">
-  <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-      android:layout_gravity="center" android:text="WHAMMY"
-      android:textColor="#F4F6FF" android:textSize="34sp" android:textStyle="bold"
-      android:letterSpacing="0.05" />
+  <TextView
+      style="@style/Text.Wordmark"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_gravity="center"
+      android:textSize="34sp"
+      android:text="WHAMMY" />
 </FrameLayout>

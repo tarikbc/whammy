@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The stage (DESIGN.md §3.3 / §9): the window is not a flat fill.
+  Layers, bottom to top:
+    1. Vertical gradient #14161F -> #0C0D14 (55%) -> #0A0B12 (stage_black) —
+       the highway receding into the dark.
+    2. A soft radial "stage bloom" at top-center: #1C2A44 @ ~22% fading to
+       transparent within ~60% of the width.
+    3. A subtle vignette at the corners: #000000 @ ~30%.
+    4. Film grain: a tiled ~120x120 noise PNG with its opacity baked in.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <!-- 1. Base vertical gradient -->
+  <item>
+    <shape android:shape="rectangle">
+      <gradient
+          android:type="linear"
+          android:angle="270"
+          android:startColor="#14161F"
+          android:centerColor="#0C0D14"
+          android:centerY="0.55"
+          android:endColor="#0A0B12" />
+    </shape>
+  </item>
+
+  <!-- 2. Top-center stage bloom -->
+  <item>
+    <shape android:shape="rectangle">
+      <gradient
+          android:type="radial"
+          android:gradientRadius="260dp"
+          android:centerX="0.5"
+          android:centerY="0.02"
+          android:startColor="#381C2A44"
+          android:endColor="#001C2A44" />
+    </shape>
+  </item>
+
+  <!-- 3. Corner vignette -->
+  <item>
+    <shape android:shape="rectangle">
+      <gradient
+          android:type="radial"
+          android:gradientRadius="480dp"
+          android:centerX="0.5"
+          android:centerY="0.45"
+          android:startColor="#00000000"
+          android:endColor="#4D000000" />
+    </shape>
+  </item>
+
+  <!-- 4. Film grain -->
+  <item>
+    <bitmap
+        android:src="@drawable/grain"
+        android:tileModeX="repeat"
+        android:tileModeY="repeat" />
+  </item>
+
+</layer-list>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Archivo Expanded — display face: wordmark, hero headlines, section eyebrows -->
+<font-family xmlns:android="http://schemas.android.com/apk/res/android">
+  <font
+      android:font="@font/archivo_expanded_semibold"
+      android:fontStyle="normal"
+      android:fontWeight="600" />
+  <font
+      android:font="@font/archivo_expanded_black"
+      android:fontStyle="normal"
+      android:fontWeight="900" />
+</font-family>

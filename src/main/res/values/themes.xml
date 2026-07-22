@@ -1,6 +1,10 @@
 <resources>
+  <!-- DESIGN.md §9: dark-only theme, no values-night variant. -->
   <style name="Theme.Whammy" parent="android:Theme.Material.NoActionBar">
-    <item name="android:windowBackground">#0A0B12</item>
+    <item name="android:windowBackground">@drawable/bg_stage</item>
+    <item name="android:colorBackground">@color/stage_black</item>
     <item name="android:statusBarColor">@android:color/transparent</item>
+    <item name="android:windowLightStatusBar">false</item>
+    <item name="android:windowDrawsSystemBarBackgrounds">true</item>
   </style>
 </resources>

@@ -1,0 +1,122 @@
+<resources>
+  <!-- ==========================================================
+       Text appearances — DESIGN.md §4.2 scale.
+       Each role points directly at its exact bundled weight file
+       (rather than the multi-weight font-family + textFontWeight,
+       which only resolves reliably on API 28+) so rendering is
+       exact on minSdk 26. @font/font_display and @font/font_text
+       remain available for ad-hoc use.
+       Tracking is expressed as android:letterSpacing in em
+       (e.g. -1.5% -> -0.015, +8% -> 0.08).
+       ========================================================== -->
+
+  <!-- Wordmark: Archivo Expanded Black, contextual size, -1.5%, UPPER -->
+  <style name="Text.Wordmark" parent="@android:style/TextAppearance">
+    <item name="android:fontFamily">@font/archivo_expanded_black</item>
+    <item name="android:letterSpacing">-0.015</item>
+    <item name="android:textColor">@color/text_hi</item>
+    <item name="android:textAllCaps">true</item>
+    <item name="android:includeFontPadding">false</item>
+  </style>
+
+  <!-- Hero headline (empty/permission): Archivo Expanded SemiBold 26sp, -1%, Title case -->
+  <style name="Text.HeroHeadline" parent="@android:style/TextAppearance">
+    <item name="android:fontFamily">@font/archivo_expanded_semibold</item>
+    <item name="android:textSize">26sp</item>
+    <item name="android:letterSpacing">-0.01</item>
+    <item name="android:textColor">@color/text_hi</item>
+    <item name="android:lineSpacingMultiplier">1.15</item>
+    <item name="android:includeFontPadding">false</item>
+  </style>
+
+  <!-- Section eyebrow: Archivo Expanded Medium 12sp, +8%, UPPER
+       (Medium 500 is not bundled for Expanded; SemiBold 600 is the
+       closest bundled weight — see §4.1 bundle list.) -->
+  <style name="Text.Eyebrow" parent="@android:style/TextAppearance">
+    <item name="android:fontFamily">@font/archivo_expanded_semibold</item>
+    <item name="android:textSize">12sp</item>
+    <item name="android:letterSpacing">0.08</item>
+    <item name="android:textColor">@color/text_lo</item>
+    <item name="android:textAllCaps">true</item>
+    <item name="android:includeFontPadding">false</item>
+  </style>
+
+  <!-- Song title: Archivo SemiBold 17sp, -0.5%, Title case -->
+  <style name="Text.Title" parent="@android:style/TextAppearance">
+    <item name="android:fontFamily">@font/archivo_semibold</item>
+    <item name="android:textSize">17sp</item>
+    <item name="android:letterSpacing">-0.005</item>
+    <item name="android:textColor">@color/text_hi</item>
+    <item name="android:lineSpacingMultiplier">1.15</item>
+    <item name="android:includeFontPadding">false</item>
+    <item name="android:maxLines">1</item>
+    <item name="android:ellipsize">end</item>
+  </style>
+
+  <!-- Artist: Archivo Regular 14sp, no tracking -->
+  <style name="Text.Artist" parent="@android:style/TextAppearance">
+    <item name="android:fontFamily">@font/archivo_regular</item>
+    <item name="android:textSize">14sp</item>
+    <item name="android:textColor">@color/text</item>
+    <item name="android:lineSpacingMultiplier">1.35</item>
+    <item name="android:includeFontPadding">false</item>
+    <item name="android:maxLines">1</item>
+    <item name="android:ellipsize">end</item>
+  </style>
+
+  <!-- Charter tag: Archivo Medium 11sp, +6%, UPPER -->
+  <style name="Text.Charter" parent="@android:style/TextAppearance">
+    <item name="android:fontFamily">@font/archivo_medium</item>
+    <item name="android:textSize">11sp</item>
+    <item name="android:letterSpacing">0.06</item>
+    <item name="android:textColor">@color/text_lo</item>
+    <item name="android:textAllCaps">true</item>
+    <item name="android:includeFontPadding">false</item>
+  </style>
+
+  <!-- Download %: Archivo SemiBold (tabular figures) 13sp, +0.5% -->
+  <style name="Text.DownloadPercent" parent="@android:style/TextAppearance">
+    <item name="android:fontFamily">@font/archivo_semibold</item>
+    <item name="android:textSize">13sp</item>
+    <item name="android:letterSpacing">0.005</item>
+    <item name="android:textColor">@color/star</item>
+    <item name="android:fontFeatureSettings">tnum</item>
+    <item name="android:includeFontPadding">false</item>
+  </style>
+
+  <!-- Search input: Archivo Regular 16sp, no tracking -->
+  <style name="Text.SearchInput" parent="@android:style/TextAppearance">
+    <item name="android:fontFamily">@font/archivo_regular</item>
+    <item name="android:textSize">16sp</item>
+    <item name="android:textColor">@color/text_hi</item>
+    <item name="android:textColorHint">@color/text_lo</item>
+    <item name="android:includeFontPadding">false</item>
+  </style>
+
+  <!-- Body / hint: Archivo Regular 15sp, no tracking -->
+  <style name="Text.Body" parent="@android:style/TextAppearance">
+    <item name="android:fontFamily">@font/archivo_regular</item>
+    <item name="android:textSize">15sp</item>
+    <item name="android:textColor">@color/text</item>
+    <item name="android:lineSpacingMultiplier">1.35</item>
+    <item name="android:includeFontPadding">false</item>
+  </style>
+
+  <!-- Button label: Archivo SemiBold 15sp, +2% -->
+  <style name="Text.Button" parent="@android:style/TextAppearance">
+    <item name="android:fontFamily">@font/archivo_semibold</item>
+    <item name="android:textSize">15sp</item>
+    <item name="android:letterSpacing">0.02</item>
+    <item name="android:textColor">@color/on_accent</item>
+    <item name="android:includeFontPadding">false</item>
+  </style>
+
+  <!-- Snackbar: Archivo Medium 14sp, +0.2% -->
+  <style name="Text.Snackbar" parent="@android:style/TextAppearance">
+    <item name="android:fontFamily">@font/archivo_medium</item>
+    <item name="android:textSize">14sp</item>
+    <item name="android:letterSpacing">0.002</item>
+    <item name="android:textColor">@color/text_hi</item>
+    <item name="android:includeFontPadding">false</item>
+  </style>
+</resources>
