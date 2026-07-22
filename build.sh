@@ -42,6 +42,7 @@ fi
 "$BT/aapt2" link -o "$OUT/apk/base.ap_" -I "$PLAT" \
   --manifest src/main/AndroidManifest.xml --java "$OUT/gen" \
   --min-sdk-version 26 --target-sdk-version 34 \
+  --version-code "${VERSION_CODE:-1}" --version-name "${VERSION_NAME:-dev}" \
   ${EXTRA_PKGS:+--extra-packages "$EXTRA_PKGS"} \
   $(ls "$OUT/obj"/*.flat 2>/dev/null) $([ -f "$OUT/obj/res.zip" ] && echo "$OUT/obj/res.zip") \
   "${AAR_RES_ARGS[@]}"
