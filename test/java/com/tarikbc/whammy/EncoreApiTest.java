@@ -103,4 +103,68 @@ class EncoreApiTest {
         assertEquals("", Chart.formatDuration(0));
         assertEquals("60:00", Chart.formatDuration(3600000));
     }
+    @Test void chart_fromJson_readsAlbumGenreYear() {
+        JSONObject o = new JSONObject("{\"md5\":\""+"a".repeat(32)+"\",\"name\":\"N\",\"artist\":\"A\",\"charter\":\"C\"," +
+          "\"album\":\"Making Movies\",\"genre\":\"Rock\",\"year\":\"2020\"}");
+        Chart c = Chart.fromJson(o);
+        assertEquals("Making Movies", c.album);
+        assertEquals("Rock", c.genre);
+        assertEquals("2020", c.year);
+    }
+    @Test void chart_fromJson_missingAlbumGenreYearAreNull() {
+        JSONObject o = new JSONObject("{\"md5\":\""+"a".repeat(32)+"\",\"name\":\"N\",\"artist\":\"A\",\"charter\":\"C\"}");
+        Chart c = Chart.fromJson(o);
+        assertNull(c.album);
+        assertNull(c.genre);
+        assertNull(c.year);
+    }
+    @Test void chart_fromJson_difficultiesIncludesOnlyNonNegativeInOrder() {
+        JSONObject o = new JSONObject("{\"md5\":\""+"a".repeat(32)+"\",\"name\":\"N\",\"artist\":\"A\",\"charter\":\"C\"," +
+          "\"diff_guitar\":4,\"diff_bass\":-1,\"diff_drums\":2}");
+        Chart c = Chart.fromJson(o);
+        assertEquals(java.util.List.of("Guitar","Drums"), new java.util.ArrayList<>(c.difficulties.keySet()));
+        assertEquals(Integer.valueOf(4), c.difficulties.get("Guitar"));
+        assertEquals(Integer.valueOf(2), c.difficulties.get("Drums"));
+        assertFalse(c.difficulties.containsKey("Bass"));
+    }
+    @Test void chart_fromJson_difficultiesAllInstrumentsMapped() {
+        JSONObject o = new JSONObject("{\"md5\":\""+"a".repeat(32)+"\",\"name\":\"N\",\"artist\":\"A\",\"charter\":\"C\"," +
+          "\"diff_guitar\":1,\"diff_bass\":2,\"diff_drums\":3,\"diff_keys\":4,\"diff_vocals\":5,\"diff_rhythm\":6,\"diff_guitarghl\":0,\"diff_bassghl\":1}");
+        Chart c = Chart.fromJson(o);
+        assertEquals(java.util.List.of("Guitar","Bass","Drums","Keys","Vocals","Rhythm","Guitar (GHL)","Bass (GHL)"),
+            new java.util.ArrayList<>(c.difficulties.keySet()));
+    }
+    @Test void chart_fromJson_missingDifficultiesYieldsEmptyMap() {
+        JSONObject o = new JSONObject("{\"md5\":\""+"a".repeat(32)+"\",\"name\":\"N\",\"artist\":\"A\",\"charter\":\"C\"}");
+        Chart c = Chart.fromJson(o);
+        assertNotNull(c.difficulties);
+        assertTrue(c.difficulties.isEmpty());
+    }
+    @Test void chart_fromJson_readsLyricsVocalsSoloFromNotesData() {
+        JSONObject o = new JSONObject("{\"md5\":\""+"a".repeat(32)+"\",\"name\":\"N\",\"artist\":\"A\",\"charter\":\"C\"," +
+          "\"notesData\":{\"hasLyrics\":true,\"hasVocals\":true,\"hasSoloSections\":true}}");
+        Chart c = Chart.fromJson(o);
+        assertTrue(c.hasLyrics);
+        assertTrue(c.hasVocals);
+        assertTrue(c.hasSoloSections);
+    }
+    @Test void chart_fromJson_missingNotesDataDefaultsLyricsVocalsSoloFalse() {
+        JSONObject o = new JSONObject("{\"md5\":\""+"a".repeat(32)+"\",\"name\":\"N\",\"artist\":\"A\",\"charter\":\"C\"}");
+        Chart c = Chart.fromJson(o);
+        assertFalse(c.hasLyrics);
+        assertFalse(c.hasVocals);
+        assertFalse(c.hasSoloSections);
+    }
+    @Test void chart_tenArgConstructor_defaultsNewDetailFields() {
+        Chart c = new Chart("d".repeat(32), "N", "A", "C", null,
+            java.util.Collections.emptyList(), false, 0, false, false);
+        assertNull(c.album);
+        assertNull(c.genre);
+        assertNull(c.year);
+        assertNotNull(c.difficulties);
+        assertTrue(c.difficulties.isEmpty());
+        assertFalse(c.hasLyrics);
+        assertFalse(c.hasVocals);
+        assertFalse(c.hasSoloSections);
+    }
 }
