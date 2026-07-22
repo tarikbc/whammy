@@ -1,29 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Instrument badge: drums. DESIGN.md §7.7/§7.10: 24 grid, 2dp stroke, monochrome. Drum shell + crossed sticks. -->
+<!--
+  Instrument badge: drums. DESIGN.md §7.7/§7.10: 24 grid, monochrome.
+  Bold FILLED silhouette: a solid barrel-shaped drum shell with a pair
+  of thick crossed drumsticks (with bead tips) angled over the top —
+  reads as percussion even at chip size, unlike thin-outline shells.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+  <!-- Drum shell (barrel silhouette). -->
   <path
-      android:pathData="M5,10 a7,3 0 1,0 14,0 a7,3 0 1,0 -14,0"
-      android:strokeColor="#FFFFFF"
-      android:strokeWidth="2"
-      android:strokeLineCap="round"
-      android:strokeLineJoin="round"
-      android:fillColor="#00000000" />
+      android:fillColor="#FFFFFFFF"
+      android:pathData="
+        M4.5,11.3
+        C4.5,10 7.9,9 12,9
+        C16.1,9 19.5,10 19.5,11.3
+        L19.5,18.3
+        C19.5,19.6 16.1,20.6 12,20.6
+        C7.9,20.6 4.5,19.6 4.5,18.3
+        Z" />
+  <!-- Crossed drumsticks with round bead tips. -->
   <path
-      android:pathData="M5,10 L5,15 a7,3 0 0,0 14,0 L19,10"
-      android:strokeColor="#FFFFFF"
-      android:strokeWidth="2"
+      android:fillColor="#FFFFFFFF"
+      android:strokeColor="#FFFFFFFF"
+      android:strokeWidth="2.3"
       android:strokeLineCap="round"
-      android:strokeLineJoin="round"
-      android:fillColor="#00000000" />
+      android:pathData="M6.3,2.3 L13.5,8.7 M17.7,2.3 L10.5,8.7" />
   <path
-      android:pathData="M7,3 L15,9 M17,3 L9,9"
-      android:strokeColor="#FFFFFF"
-      android:strokeWidth="2"
-      android:strokeLineCap="round"
-      android:strokeLineJoin="round"
-      android:fillColor="#00000000" />
+      android:fillColor="#FFFFFFFF"
+      android:pathData="
+        M6.3,2.3 m-1.35,0 a1.35,1.35 0,1,0 2.7,0 a1.35,1.35 0,1,0 -2.7,0 Z
+        M17.7,2.3 m-1.35,0 a1.35,1.35 0,1,0 2.7,0 a1.35,1.35 0,1,0 -2.7,0 Z" />
 </vector>

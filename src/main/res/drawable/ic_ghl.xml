@@ -1,15 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- GHL (6-fret guitar/bass) badge — a "6" mark. DESIGN.md §7.7/§7.10: 24 grid, 2dp stroke, monochrome. -->
+<!--
+  GHL (6-fret guitar/bass) badge — a bold "6" glyph. DESIGN.md §7.7/§7.10:
+  24 grid, monochrome. Heavy-weight stem hooking into a thick closed
+  ring (not an open arc), so it reads as an unambiguous "6" rather than
+  a "c"/"e" at chip size.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+  <!-- Stem/hook curving from top down into the bowl. -->
   <path
-      android:pathData="M14,5 Q8,5 8,12 L8,15 a4,4 0 1,0 7,-2"
-      android:strokeColor="#FFFFFF"
-      android:strokeWidth="2"
+      android:fillColor="#00000000"
+      android:strokeColor="#FFFFFFFF"
+      android:strokeWidth="3.4"
       android:strokeLineCap="round"
-      android:strokeLineJoin="round"
-      android:fillColor="#00000000" />
+      android:pathData="M15.5,4 Q9,4.2 8.48,12.74" />
+  <!-- Closed bowl (thick ring). -->
+  <path
+      android:fillColor="#FFFFFFFF"
+      android:fillType="evenOdd"
+      android:pathData="
+        M12,11.1
+        a4.6,4.6 0 1,1 0,9.2
+        a4.6,4.6 0 1,1 0,-9.2
+        Z
+        M12,13.4
+        a2.3,2.3 0 1,0 0,4.6
+        a2.3,2.3 0 1,0 0,-4.6
+        Z" />
 </vector>

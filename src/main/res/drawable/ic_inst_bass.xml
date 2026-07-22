@@ -1,35 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Instrument badge: bass. DESIGN.md §7.7/§7.10: 24 grid, 2dp stroke,
-  monochrome. A trapezoid (double-cutaway-ish) body + a long, straight
-  vertical neck + a flat headstock bar with tuning-peg ticks — the
-  straight neck and blocky body read distinctly from ic_inst_guitar's
-  waisted body and diagonal neck at chip size.
+  Instrument badge: bass. DESIGN.md §7.7/§7.10: 24 grid, monochrome.
+  Bold FILLED silhouette. Distinct from ic_inst_guitar via a blockier,
+  larger trapezoid body (no waist pinch), a longer near-vertical neck,
+  and a wide flat rectangular headstock with peg ticks — reads as a
+  bigger, straighter instrument than the guitar's rounder body/angled
+  neck at a glance.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+  <!-- Blocky, rounded-trapezoid body (wider/less waisted than the guitar's). -->
   <path
-      android:pathData="M7,13 L13,13 L14,19.5 L6,19.5 Z"
-      android:strokeColor="#FFFFFF"
-      android:strokeWidth="2"
-      android:strokeLineCap="round"
-      android:strokeLineJoin="round"
-      android:fillColor="#00000000" />
+      android:fillColor="#FFFFFFFF"
+      android:pathData="
+        M6,12.5 L13,12.5
+        C13.9,12.5 14.6,13.1 14.8,14.5
+        L14.9,18.5
+        C14.9,20.4 13.5,21.8 11.6,21.8
+        L7.4,21.8
+        C5.5,21.8 4.1,20.4 4.1,18.5
+        L4.2,14.5
+        C4.4,13.1 5.1,12.5 6,12.5
+        Z" />
+  <!-- Diagonal neck: steeper and longer than the guitar's for a taller-instrument read. -->
   <path
-      android:pathData="M10,13 L10,3.3"
-      android:strokeColor="#FFFFFF"
-      android:strokeWidth="2"
-      android:strokeLineCap="round"
-      android:strokeLineJoin="round"
-      android:fillColor="#00000000" />
+      android:fillColor="#FFFFFFFF"
+      android:pathData="M8.34,12.42 L10.66,13.58 L15.66,3.58 L13.34,2.42 Z" />
+  <!-- Wide flat rectangular headstock (vs. the guitar's round knob). -->
   <path
-      android:pathData="M7.3,3.3 L12.7,3.3 M7.8,3.3 L6.7,1.6 M12.2,3.3 L13.3,1.6"
-      android:strokeColor="#FFFFFF"
-      android:strokeWidth="2"
-      android:strokeLineCap="round"
-      android:strokeLineJoin="round"
-      android:fillColor="#00000000" />
+      android:fillColor="#FFFFFFFF"
+      android:pathData="M11.8,1.4 L17.3,1.4 L17.3,4.6 L11.8,4.6 Z" />
 </vector>
