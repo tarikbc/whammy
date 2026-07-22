@@ -32,4 +32,12 @@ class EncoreApiTest {
         assertNull(c.artist);
         assertNull(c.charter);
     }
+    @Test void parse_returnsChartsAndSkipsBadRows() {
+        String json = "{\"found\":2,\"data\":[" +
+          "{\"md5\":\""+"b".repeat(32)+"\",\"name\":\"N1\",\"artist\":\"A1\",\"charter\":\"C1\"}," +
+          "{\"name\":\"no md5\"}]}";
+        java.util.List<Chart> r = EncoreApi.parseSearchResults(json);
+        assertEquals(1, r.size());
+        assertEquals("N1", r.get(0).name);
+    }
 }
