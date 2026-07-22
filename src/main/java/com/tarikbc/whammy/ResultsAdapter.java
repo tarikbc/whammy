@@ -93,15 +93,21 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
   private static final float CHIP_ICON_GAP_DP = 3f;
 
   private final List<Chart> charts;
-  private final DownloadState[] states;
-  private final int[] percents;
+  // Not final: append() (infinite-scroll pagination, DESIGN.md §7.11 area /
+  // task-pagination-filters) grows these parallel arrays in lockstep with
+  // `charts` on each subsequent page, so they're reassigned there.
+  private DownloadState[] states;
+  private int[] percents;
   private final ArtLoader artLoader;
 
   /** Set by the host to receive note-button taps. */
   public OnDownload onDownload;
 
   public ResultsAdapter(List<Chart> charts, ArtLoader artLoader) {
-    this.charts = charts;
+    // Copy into a mutable ArrayList regardless of what the caller passed in
+    // (e.g. an immutable List.of(...) result) — append() needs to mutate
+    // this list in place as later pages arrive.
+    this.charts = new ArrayList<>(charts);
     this.artLoader = artLoader;
     int n = charts.size();
     this.states = new DownloadState[n];
@@ -114,6 +120,35 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.RowHolde
     states[pos] = s;
     percents[pos] = percent;
     notifyItemChanged(pos);
+  }
+
+  /**
+   * Infinite-scroll pagination append: adds {@code more} to the end of the
+   * backing list and grows the parallel {@link #states}/{@link #percents}
+   * arrays to match, so every appended row starts life as a clean IDLE
+   * state (no stale bleed from whatever the old array's out-of-bounds
+   * memory might otherwise imply, and no ArrayIndexOutOfBoundsException on
+   * the next {@link #setState}/bind of an appended row). Existing rows'
+   * states/percents are preserved byte-for-byte — only new slots are
+   * appended. No-op (and no notify) for an empty page, since that's also
+   * how the caller detects end-of-results.
+   */
+  public void append(List<Chart> more) {
+    if (more == null || more.isEmpty()) return;
+    int oldSize = charts.size();
+    charts.addAll(more);
+    int newSize = charts.size();
+
+    DownloadState[] newStates = Arrays.copyOf(states, newSize);
+    int[] newPercents = Arrays.copyOf(percents, newSize);
+    for (int i = oldSize; i < newSize; i++) {
+      newStates[i] = DownloadState.IDLE;
+      newPercents[i] = 0;
+    }
+    states = newStates;
+    percents = newPercents;
+
+    notifyItemRangeInserted(oldSize, more.size());
   }
 
   @Override public RowHolder onCreateViewHolder(ViewGroup parent, int viewType) {

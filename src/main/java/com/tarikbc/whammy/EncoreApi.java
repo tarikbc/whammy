@@ -13,6 +13,17 @@ public class EncoreApi {
     public static String artUrl(String albumArtMd5) { return "https://files.enchor.us/" + albumArtMd5 + ".jpg"; }
 
     public static List<Chart> search(String query, int page) throws IOException {
+        return search(query, page, null);
+    }
+
+    /**
+     * Same as {@link #search(String, int)} but narrows results server-side
+     * to a single instrument (DESIGN.md §7.11) — one of "guitar", "bass",
+     * "drums", "keys", "vocals" (lowercase), or null for no filter. Verified
+     * live: setting instrument narrows the result count (e.g. metallica:
+     * null→506, "drums"→9).
+     */
+    public static List<Chart> search(String query, int page, String instrument) throws IOException {
         HttpURLConnection c = (HttpURLConnection) new URL(SEARCH_URL).openConnection();
         c.setRequestMethod("POST");
         c.setConnectTimeout(15000); c.setReadTimeout(30000);
@@ -20,7 +31,7 @@ public class EncoreApi {
         c.setRequestProperty("User-Agent", "Whammy/1.0");
         c.setDoOutput(true);
         try (OutputStream os = c.getOutputStream()) {
-            os.write(buildSearchBody(query, page, 25).getBytes("UTF-8"));
+            os.write(buildSearchBody(query, page, 25, instrument).getBytes("UTF-8"));
         }
         int code = c.getResponseCode();
         InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
@@ -84,12 +95,19 @@ public class EncoreApi {
     }
 
     public static String buildSearchBody(String query, int page, int perPage) {
+        return buildSearchBody(query, page, perPage, null);
+    }
+
+    /** @param instrument lowercase instrument name ("guitar"/"bass"/"drums"/
+     *  "keys"/"vocals") to filter server-side, or null for no filter
+     *  (DESIGN.md §7.11). */
+    public static String buildSearchBody(String query, int page, int perPage, String instrument) {
         try {
             JSONObject b = new JSONObject();
             b.put("search", query == null ? "" : query);
             b.put("per_page", perPage);
             b.put("page", page);
-            b.put("instrument", JSONObject.NULL);
+            b.put("instrument", instrument == null ? JSONObject.NULL : instrument);
             b.put("difficulty", JSONObject.NULL);
             b.put("drumType", JSONObject.NULL);
             b.put("drumsReviewed", true);

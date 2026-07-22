@@ -16,6 +16,20 @@ class EncoreApiTest {
         assertTrue(b.isNull("sort"));
         assertEquals("bridge", b.getString("source"));
     }
+    @Test void searchBody_fourArg_defaultsInstrumentNullWhenOmitted() {
+        // 3-arg overload must keep delegating with instrument=null so
+        // existing callers/tests compile and behave unchanged.
+        JSONObject b = new JSONObject(EncoreApi.buildSearchBody("dire straits", 1, 25));
+        assertTrue(b.isNull("instrument"));
+    }
+    @Test void searchBody_instrumentGoesIntoBody() {
+        JSONObject b = new JSONObject(EncoreApi.buildSearchBody("metallica", 1, 25, "drums"));
+        assertEquals("drums", b.getString("instrument"));
+    }
+    @Test void searchBody_nullInstrumentStaysJsonNull() {
+        JSONObject b = new JSONObject(EncoreApi.buildSearchBody("metallica", 1, 25, null));
+        assertTrue(b.isNull("instrument"));
+    }
     @Test void chart_fromJson_readsFieldsAndToleratesNulls() {
         JSONObject o = new JSONObject("{\"md5\":\""+"a".repeat(32)+"\",\"name\":\"Sultans of Swing\",\"artist\":\"Dire Straits\",\"charter\":\"Harmonix\",\"album\":null}");
         Chart c = Chart.fromJson(o);

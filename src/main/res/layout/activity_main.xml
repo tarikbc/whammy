@@ -86,6 +86,134 @@
         android:focusable="true" />
   </LinearLayout>
 
+  <!-- Filter chip rail (DESIGN.md §7.11): instrument single-select
+       (server-side, narrows the search body's `instrument` field) plus a
+       client-side Video toggle. Hidden until there is a search context
+       (MainActivity shows it once a search has run) so the first-launch
+       empty state stays uncluttered. Chip shell = bg_chip_filter /
+       bg_chip_filter_selected (surface_hi, r_sm, edge_hair; selected =
+       star 1.5dp stroke) per §7.11 — label color (text / text_hi) is
+       swapped in code on selection. -->
+  <HorizontalScrollView
+      android:id="@+id/filter_rail"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="@dimen/space_12"
+      android:visibility="gone"
+      android:scrollbars="none"
+      android:clipToPadding="false"
+      android:paddingStart="@dimen/screen_padding_h"
+      android:paddingEnd="@dimen/screen_padding_h">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+      <TextView
+          android:id="@+id/chip_instrument_guitar"
+          style="@style/Text.Charter"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:background="@drawable/bg_chip_filter"
+          android:textColor="@color/text"
+          android:paddingStart="@dimen/space_12"
+          android:paddingEnd="@dimen/space_12"
+          android:paddingTop="@dimen/space_8"
+          android:paddingBottom="@dimen/space_8"
+          android:clickable="true"
+          android:focusable="true"
+          android:text="Guitar" />
+
+      <TextView
+          android:id="@+id/chip_instrument_bass"
+          style="@style/Text.Charter"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="@dimen/badge_gap"
+          android:background="@drawable/bg_chip_filter"
+          android:textColor="@color/text"
+          android:paddingStart="@dimen/space_12"
+          android:paddingEnd="@dimen/space_12"
+          android:paddingTop="@dimen/space_8"
+          android:paddingBottom="@dimen/space_8"
+          android:clickable="true"
+          android:focusable="true"
+          android:text="Bass" />
+
+      <TextView
+          android:id="@+id/chip_instrument_drums"
+          style="@style/Text.Charter"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="@dimen/badge_gap"
+          android:background="@drawable/bg_chip_filter"
+          android:textColor="@color/text"
+          android:paddingStart="@dimen/space_12"
+          android:paddingEnd="@dimen/space_12"
+          android:paddingTop="@dimen/space_8"
+          android:paddingBottom="@dimen/space_8"
+          android:clickable="true"
+          android:focusable="true"
+          android:text="Drums" />
+
+      <TextView
+          android:id="@+id/chip_instrument_keys"
+          style="@style/Text.Charter"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="@dimen/badge_gap"
+          android:background="@drawable/bg_chip_filter"
+          android:textColor="@color/text"
+          android:paddingStart="@dimen/space_12"
+          android:paddingEnd="@dimen/space_12"
+          android:paddingTop="@dimen/space_8"
+          android:paddingBottom="@dimen/space_8"
+          android:clickable="true"
+          android:focusable="true"
+          android:text="Keys" />
+
+      <TextView
+          android:id="@+id/chip_instrument_vocals"
+          style="@style/Text.Charter"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="@dimen/badge_gap"
+          android:background="@drawable/bg_chip_filter"
+          android:textColor="@color/text"
+          android:paddingStart="@dimen/space_12"
+          android:paddingEnd="@dimen/space_12"
+          android:paddingTop="@dimen/space_8"
+          android:paddingBottom="@dimen/space_8"
+          android:clickable="true"
+          android:focusable="true"
+          android:text="Vocals" />
+
+      <!-- Divider gap between the (server-side, single-select) instrument
+           group and the (client-side) Video toggle: extra space reads as
+           a deliberate group break rather than just another chip. -->
+      <View
+          android:layout_width="@dimen/space_12"
+          android:layout_height="1dp" />
+
+      <TextView
+          android:id="@+id/chip_video"
+          style="@style/Text.Charter"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:background="@drawable/bg_chip_filter"
+          android:textColor="@color/text"
+          android:paddingStart="@dimen/space_12"
+          android:paddingEnd="@dimen/space_12"
+          android:paddingTop="@dimen/space_8"
+          android:paddingBottom="@dimen/space_8"
+          android:clickable="true"
+          android:focusable="true"
+          android:text="Video" />
+    </LinearLayout>
+  </HorizontalScrollView>
+
   <!-- RecyclerView is added into this container programmatically by
        MainActivity (not declared here as an XML tag) — see
        ResultsAdapter / task-8-report.md for why. empty_state is a
