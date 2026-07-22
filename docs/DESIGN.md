@@ -222,6 +222,7 @@ The search field and primary button carry a faint top-to-bottom **sheen**: a 1px
 - **Album art:** a **56dp rounded square** (`r_sm` 12dp) leading the row, `edge_hair` hairline outline. Source: `https://files.enchor.us/{albumArtMd5}.jpg` (from the search result's `albumArtMd5`), loaded async and memory-cached; center-cropped. **Placeholder** while loading / on missing art or fetch failure: a `surface_hi` tile bearing a small centered `text_lo` W-dive (or music-note) glyph — never a broken-image or empty box. This replaces the old fret lane-light: **rows lead with cover art; the fret palette now lives on the app icon and in the note-hit accents, not per-row.**
 - **Title:** Archivo SemiBold 17sp `text_hi`, ellipsized.
 - **Meta:** artist · charter tag rendered as **one line that ellipsizes as a unit** (artist Archivo Regular 14sp `text`, `·`, then `CHARTED BY XXX` Archivo Medium 11sp +6% `text_lo`) — a long artist name must ellipsize the whole meta line, never hard-clip or squeeze the charter tag to zero width.
+- **Badges:** a third line of small badges (7.10) — instruments, video, duration — beneath the meta. Quiet and monochrome; they inform without competing with title/art.
 - **Right:** the note button (7.4).
 - **Press (whole row):** scale 0.985 + `surface_hi` lift + a soft `star`-tinted ripple, `dur_1` `ease_standard`.
 
@@ -263,8 +264,10 @@ One cohesive set, **24×24 grid, 2dp stroke, round caps/joins, consistent optica
 - `clear` — ✕.
 - `scan` — two-arrow refresh (the Clone Hero rescan hint).
 - `folder-down` — permission.
-- `overflow` — settings/more.
+- `library` — stacked/shelf glyph, the app-bar entry to the Library screen.
+- `trash` — delete, on library rows.
 - `w-dive` — the brand mark (empty state / logo).
+- **Badge/instrument marks** (11sp, same 2dp-stroke family, monochrome): `guitar`, `bass`, `drums`, `keys`, `vocals`, `video` (film), and a `ghl` "6" mark. Simpler than the action icons — read as small chips, not buttons.
 Ship as vector drawables; tint via `app:tint` to the contextual color.
 
 ### 7.8 Snackbar / toast
@@ -276,6 +279,31 @@ Ship as vector drawables; tint via `app:tint` to the contextual color.
 
 ### 7.9 Scan-in-Clone-Hero hint
 Slim inline pill (or reuse the snackbar) after a successful download: `scan` icon in `star` + `Scan your library in Clone Hero to see new charts.` (`Scan` emphasized `text_hi`). Auto-dismiss or a small `Got it`.
+
+### 7.10 Song badges (metadata at a glance)
+A compact, monochrome badge row on each result — enough to judge a chart without opening it, quiet enough not to fight the title or cover. All badges are `text_lo` on transparent (no fills), 11sp / 2dp-stroke icons, ~6dp apart. Data comes straight from the search result:
+- **Instruments** (`notesData.instruments`): small icons for the charted instruments — `guitar`, `bass`, `drums`, `keys`, `vocals` (and `guitarghl` → a "6" GHL mark). Show up to ~4; the presence of the icon is the signal, no counts.
+- **Video** (`hasVideoBackground` true): a `video` badge (film glyph) — the "has a background video" cue.
+- **Duration** (`song_length` ms → `m:ss`): a text badge, e.g. `5:36`.
+- **Pro drums** (`pro_drums`) and **Modchart** (`modchart`): tiny text tags `PRO` / `MOD` only when true, `text_lo` +6% UPPER — secondary, easy to skip.
+Never render a badge for an absent/false attribute (no empty slots). On very narrow rows, drop trailing badges before wrapping — the row stays one visual line of chips.
+
+### 7.11 Filters (search refinement)
+A single horizontal, scrollable **filter chip** rail directly under the search field (hidden until there is a search context). Chips are `surface_hi`, `r_sm` 12dp, `edge_hair`; **selected** = `star` 1.5dp stroke + faint cyan glow + `text_hi` label; unselected = `text` label.
+- **Instrument** (`guitar`/`bass`/`drums`/`keys`/`vocals`): maps to the API body's `instrument` param (server-side). Single-select (the API takes one instrument); a selected instrument also filters which difficulty is meaningful.
+- **Has video** (`hasVideoBackground`): client-side filter on the returned page.
+- Chips animate selection with `dur_2` `ease_standard`. A `clear` affordance appears when any filter is active. Keep the rail to the essential few — instrument + video — not every field the API exposes.
+
+### 7.12 Library screen (manage downloaded charts)
+Opened from the app bar `library` glyph (7.1); its own screen over the stage, with a back affordance returning to Search.
+- **Header:** `Your library` (Archivo Expanded SemiBold 22sp `text_hi`) + a count sub (`N charts · 312 MB`, `text_lo`).
+- **Rows:** the same album-row rhythm, but the right-side control is a **delete** affordance (a `trash` glyph in `text_lo`, turning `fret_red` on press) instead of the download note. Title = the chart folder/file name; meta = size. No cover fetch (local charts) — show the art placeholder tile, or the embedded `album.png` if trivially available (else placeholder).
+- **Delete:** tapping delete asks for a light inline confirm (the row slides to reveal a `fret_red` `Delete` / `Cancel`, or a small confirm snackbar with `UNDO`) — never a blocking system dialog (see the alert-dialog guidance). On confirm, remove the file/folder from `/sdcard/Documents/Clone Hero/Songs` and animate the row out (`dur_3` `ease_exit`), updating the count.
+- **Empty state:** `No charts yet` + `Songs you download land here.` with the W-dive mark — mirrors the search empty state.
+- **Scan hint:** a persistent slim footer reminding to rescan in Clone Hero after changes (reuse 7.9).
+
+### 7.1b App-bar library entry
+The app bar (7.1) carries a single **`library`** glyph at the trailing edge (`text_lo`, 24-grid) that opens the Library screen (7.12). It replaces the generic overflow glyph as the one top-level action; settings, if ever needed, move elsewhere. Keep the bar otherwise clean.
 
 ---
 
