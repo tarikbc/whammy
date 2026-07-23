@@ -89,7 +89,12 @@ public class SongDetailActivity extends Activity {
   private void refreshExistingKeys() {
     executor.execute(() -> {
       Set<String> keys = SongStore.existingChartKeys();
-      runOnUiThreadSafe(() -> existingKeys = keys);
+      runOnUiThreadSafe(() -> {
+        existingKeys = keys;
+        // The keys arrive async — refresh the button so an already-owned
+        // chart shows "In your library" instead of a misleading "Download".
+        updateDownloadButtonLabel(findViewById(R.id.download_button));
+      });
     });
   }
 
@@ -333,9 +338,15 @@ public class SongDetailActivity extends Activity {
         break;
       case IDLE:
       default:
-        downloadButton.setText(sizeLabel != null ? "Download · " + sizeLabel : "Download");
+        if (existingKeys.contains(SongStore.keyFor(chart))) {
+          // Already downloaded (consistent with the search row's "IN LIBRARY"
+          // chip). Still tappable — the tap handler offers a re-download confirm.
+          downloadButton.setText("✓ In your library");
+        } else {
+          downloadButton.setText(sizeLabel != null ? "Download · " + sizeLabel : "Download");
+        }
     }
-    // TODO promote "Download"/"Downloading…"/"Added ✓"/"Retry download" to strings.xml
+    // TODO promote "Download"/"Downloading…"/"Added ✓"/"Retry download"/"In your library" to strings.xml
   }
 
   /** Builds one label-only chip (PRO DRUMS / MOD / VOCALS): DESIGN.md
